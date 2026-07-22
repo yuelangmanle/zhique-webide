@@ -9,39 +9,39 @@ interface PermissionManagerProps {
 
 const permissionGroups = [
   {
-    name: 'Camera',
+    name: '相机',
     key: 'camera',
-    description: 'Access device camera',
+    description: '访问设备摄像头',
     icon: '📷',
   },
   {
-    name: 'Photos',
+    name: '相册',
     key: 'photos',
-    description: 'Access photo gallery',
+    description: '访问图片相册',
     icon: '🖼️',
   },
   {
-    name: 'Files',
+    name: '文件存储',
     key: 'storage',
-    description: 'Access device storage',
+    description: '访问设备存储空间',
     icon: '📁',
   },
   {
-    name: 'Location',
+    name: '位置信息',
     key: 'location',
-    description: 'Access device location',
+    description: '获取设备地理位置',
     icon: '📍',
   },
   {
-    name: 'Bluetooth',
+    name: '蓝牙',
     key: 'bluetooth',
-    description: 'Access Bluetooth',
+    description: '使用蓝牙功能',
     icon: '🔵',
   },
   {
-    name: 'Notifications',
+    name: '通知推送',
     key: 'notification',
-    description: 'Send push notifications',
+    description: '发送推送通知',
     icon: '🔔',
   },
 ];
@@ -76,7 +76,7 @@ export const PermissionManager = ({ onClose }: PermissionManagerProps) => {
   const togglePermission = async (key: string) => {
     const currentState = permissions[key] ?? false;
     const newState = !currentState;
-    
+
     setPermissions((prev) => ({ ...prev, [key]: newState }));
     appStore.setPermissionSetting(key, newState);
 
@@ -85,71 +85,74 @@ export const PermissionManager = ({ onClose }: PermissionManagerProps) => {
         const result = await permissionService.requestPermission(key);
         setStatus((prev) => ({ ...prev, [key]: result }));
       } catch (error) {
-        console.error('Failed to request permission:', error);
+        console.error('权限请求失败:', error);
       }
     }
   };
 
   const getStatusBadge = (key: string) => {
     const s = status[key];
-    if (s?.granted) return <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">Granted</span>;
-    if (s?.prompt) return <span className="px-2 py-0.5 bg-yellow-500 text-white text-xs rounded-full">Ask</span>;
-    if (!s) return <span className="px-2 py-0.5 bg-gray-500 text-white text-xs rounded-full">Unknown</span>;
-    return <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">Denied</span>;
+    if (s?.granted) return <span className="px-2 py-0.5 bg-emerald-500 text-white text-xs rounded-full">已允许</span>;
+    if (s?.prompt) return <span className="px-2 py-0.5 bg-amber-500 text-white text-xs rounded-full">询问</span>;
+    if (!s) return <span className="px-2 py-0.5 bg-slate-500 text-white text-xs rounded-full">未知</span>;
+    return <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">已拒绝</span>;
   };
 
   return (
-    <div className="h-full flex flex-col bg-dark-900">
-      <header className="flex items-center justify-between px-4 py-3 bg-dark-800 border-b border-dark-700">
+    <div className="h-full flex flex-col bg-slate-950">
+      <header
+        className="flex items-center justify-between px-3 py-2.5 bg-slate-900 border-b border-slate-800 flex-shrink-0"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.625rem)' }}
+      >
         <div className="flex items-center gap-2">
           <span className="text-xl">🔒</span>
-          <h2 className="text-white font-semibold">Permission Manager</h2>
+          <h2 className="text-white font-bold text-sm">权限管理</h2>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white transition-colors"
+            className="p-2 text-slate-400 active:text-white transition-colors"
           >
             ✕
           </button>
         )}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-3">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {permissionGroups.map((group) => (
               <div
                 key={group.key}
-                className={`p-4 rounded-lg border transition-all ${
+                className={`p-3.5 rounded-xl border transition-all ${
                   permissions[group.key]
-                    ? 'bg-dark-700 border-primary-500/30'
-                    : 'bg-dark-800 border-dark-600'
+                    ? 'bg-slate-800 border-cyan-500/30'
+                    : 'bg-slate-900 border-slate-800'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{group.icon}</span>
-                    <div>
-                      <h3 className="text-white font-medium">{group.name}</h3>
-                      <p className="text-gray-400 text-sm">{group.description}</p>
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <span className="text-2xl flex-shrink-0">{group.icon}</span>
+                    <div className="min-w-0">
+                      <h3 className="text-white font-medium text-sm">{group.name}</h3>
+                      <p className="text-slate-400 text-xs truncate">{group.description}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {getStatusBadge(group.key)}
                     <button
                       onClick={() => togglePermission(group.key)}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${
-                        permissions[group.key] ? 'bg-primary-500' : 'bg-dark-600'
+                      className={`relative w-11 h-6 rounded-full transition-colors ${
+                        permissions[group.key] ? 'bg-cyan-500' : 'bg-slate-700'
                       }`}
                     >
                       <span
                         className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                          permissions[group.key] ? 'translate-x-7' : 'translate-x-1'
+                          permissions[group.key] ? 'translate-x-6' : 'translate-x-1'
                         }`}
                       />
                     </button>
@@ -161,9 +164,12 @@ export const PermissionManager = ({ onClose }: PermissionManagerProps) => {
         )}
       </div>
 
-      <footer className="px-4 py-3 bg-dark-800 border-t border-dark-700">
-        <p className="text-gray-400 text-xs text-center">
-          Note: Permissions are required for the generated APK to function properly
+      <footer
+        className="px-4 py-3 bg-slate-900 border-t border-slate-800 flex-shrink-0"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+      >
+        <p className="text-slate-500 text-xs text-center">
+          提示：权限用于打包后的APK正常运行
         </p>
       </footer>
     </div>
