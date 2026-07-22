@@ -8,6 +8,16 @@ import { javascript } from '@codemirror/lang-javascript';
 import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { oneDark } from '@codemirror/theme-one-dark';
 
+const editorTheme = EditorView.theme({
+  '&': { backgroundColor: '#020617', color: '#e2e8f0' },
+  '.cm-gutters': { backgroundColor: '#0f172a', border: 'none' },
+  '.cm-activeLine': { backgroundColor: '#1e293b' },
+  '.cm-activeLineGutter': { backgroundColor: '#1e293b' },
+  '.cm-cursor': { borderLeftColor: '#06b6d4' },
+  '.cm-selectionBackground': { backgroundColor: '#155e75' },
+  '&.cm-focused .cm-selectionBackground': { backgroundColor: '#155e75' },
+}, { dark: true });
+
 
 interface CodeEditorProps {
   content: string;
@@ -46,6 +56,7 @@ export const CodeEditor = ({ content, onChange, language = 'html' }: CodeEditorP
         autocompletion(),
         closeBrackets(),
         oneDark,
+        editorTheme,
         keymap.of([
           ...defaultKeymap,
           ...historyKeymap,
@@ -60,7 +71,6 @@ export const CodeEditor = ({ content, onChange, language = 'html' }: CodeEditorP
         EditorView.theme({
           '&': { height: '100%', maxHeight: '100%' },
           '.cm-scroller': { overflow: 'auto' },
-          '.cm-gutters': { borderRight: '1px solid #334155' },
         }),
       ],
     });

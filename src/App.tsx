@@ -8,11 +8,19 @@ import { projectService } from './project-manager/services/projectService';
 import { appStore } from './common/store/appStore';
 import { useStore } from './common/hooks/useStore';
 import { type Project } from './common/types';
-import { IconFolder, IconSave, IconCheck, IconEdit, IconEye, IconAI, IconPackage, IconBird } from './common/components/Icons';
+import { IconFolder, IconSave, IconCheck, IconEdit, IconEye, IconAI, IconPackage, IconBird, IconRefresh } from './common/components/Icons';
+import { toast, ToastContainer } from './common/components/Toast';
+import { ConfirmSheetContainer } from './common/components/ConfirmSheet';
+import { ProjectCardSkeleton } from './common/components/Skeleton';
 
 type TabView = 'editor' | 'preview' | 'ai' | 'builder';
 type FileType = 'html' | 'css' | 'js';
 type SaveStatus = 'idle' | 'saving' | 'saved';
+
+// 触觉反馈 helper：在不支持振动的设备上静默无操作
+const haptic = (ms: number) => {
+  if ('vibrate' in navigator) navigator.vibrate(ms);
+};
 
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -24,6 +32,8 @@ function App() {
   const [activeFile, setActiveFile] = useState<FileType>('html');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [loading, setLoading] = useState(true);
+  // 预览刷新：递增 key 强制重置 iframe
+  const [previewKey, setPreviewKey] = useState(0);
 
   // 手势导航：记录触摸起点（useRef 避免重渲染）
   const touchStartX = useRef<number | null>(null);
@@ -36,6 +46,20 @@ function App() {
 
   useEffect(() => {
     initApp();
+  }, []);
+
+  // E6: visualViewport 键盘适配 —— 注入 --keyboard-height 变量供 CSS 使用
+  useEffect(() => {
+    if (!window.visualViewport) return;
+    const handler = () => {
+      const root = document.getElementById('root');
+      if (root) {
+        const keyboardHeight = window.innerHeight - window.visualViewport!.height;
+        root.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
+      }
+    };
+    window.visualViewport.addEventListener('resize', handler);
+    return () => window.visualViewport?.removeEventListener('resize', handler);
   }, []);
 
   // 初始化：加载项目列表 + 自动恢复上次打开的项目
@@ -89,7 +113,8 @@ function App() {
       setShowProjects(false);
     } catch (e) {
       console.error('打开项目失败', e);
-      alert('打开项目失败: ' + (e instanceof Error ? e.message : '未知错误'));
+      // E5: 用 toast 替换 alert
+      toast.error('打开项目失败: ' + (e instanceof Error ? e.message : '未知错误'));
     }
   };
 
@@ -97,9 +122,9 @@ function App() {
     setHtmlContent(code);
   };
 
-  // 自动保存逻辑（不弹 alert，失败只 console.error）
-  const autoSave = async () => {
-    if (!state.currentProject) return;
+  // 自动保存逻辑（不弹 toast，失败只 console.error）—— 返回是否成功，供手动保存判断
+  const autoSave = async (): Promise<boolean> => {
+    if (!state.currentProject) return false;
     try {
       if (state.currentProject.type === 'single') {
         await projectService.writeFile(state.currentProject.id, 'index.html', htmlContent);
@@ -112,16 +137,29 @@ function App() {
       loadProjects(); // 刷新更新时间
       if (savedResetTimer.current) clearTimeout(savedResetTimer.current);
       savedResetTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
+      return true;
     } catch (e) {
       console.error('自动保存失败', e);
       setSaveStatus('idle');
+      return false;
     }
   };
 
-  // 手动保存：取消 pending debounce，立即触发 autoSave
-  const handleManualSave = () => {
+  // 手动保存：取消 pending debounce，立即触发 autoSave，并提示结果
+  const handleManualSave = async () => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-    autoSave();
+    const ok = await autoSave();
+    if (ok) {
+      toast.success('保存成功');
+      haptic(10);
+    } else {
+      toast.error('保存失败');
+    }
+  };
+
+  // 预览刷新：重置 iframe
+  const handleRefreshPreview = () => {
+    setPreviewKey((k) => k + 1);
   };
 
   // debounce 自动保存：内容变化 1s 后触发
@@ -178,6 +216,8 @@ function App() {
     const currentIndex = tabsOrder.indexOf(activeTab);
     if (currentIndex === -1) return;
 
+    // O3: 标签切换触觉反馈
+    haptic(5);
     if (deltaX > 0) {
       // 右滑 → 左邻标签（循环）
       const prevIndex = (currentIndex - 1 + tabsOrder.length) % tabsOrder.length;
@@ -190,11 +230,17 @@ function App() {
   };
 
   if (loading) {
+    // O2: 保留 IconBird + 进度文字 + 3 个骨架卡片预览
     return (
-      <div className="h-[100dvh] w-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
+      <div className="h-[100dvh] w-screen bg-slate-950 flex flex-col">
+        <div className="text-center pt-12 pb-6">
           <IconBird size={64} className="mx-auto mb-4 animate-pulse" />
-          <p className="text-slate-400 text-sm">加载中...</p>
+          <p className="text-slate-400 text-sm">正在加载项目...</p>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3">
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
         </div>
       </div>
     );
@@ -225,11 +271,11 @@ function App() {
           </div>
         </div>
 
-        {/* 保存状态指示器（点击可手动立即保存） */}
+        {/* E10: 顶部栏右侧上下文操作，按 activeTab 条件渲染 */}
         {activeTab === 'editor' && state.currentProject && (
           <button
             onClick={handleManualSave}
-            className={`flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex-shrink-0 ${
+            className={`flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-lg flex-shrink-0 transition-all active:scale-[0.97] ${
               saveStatus === 'saved'
                 ? 'bg-emerald-500 text-white active:bg-emerald-600'
                 : saveStatus === 'saving'
@@ -237,8 +283,20 @@ function App() {
                 : 'bg-slate-800 text-slate-400 active:bg-slate-700'
             }`}
           >
-            {saveStatus === 'saved' ? <IconCheck size={14} /> : <IconSave size={14} />}
+            {/* E14: 保存状态图标过渡，saved 态微缩放 */}
+            <span className={`inline-flex transition-all duration-200 ${saveStatus === 'saved' ? 'scale-110' : ''}`}>
+              {saveStatus === 'saved' ? <IconCheck size={14} /> : <IconSave size={14} />}
+            </span>
             {saveStatus === 'saving' ? '保存中...' : '已保存'}
+          </button>
+        )}
+        {activeTab === 'preview' && state.currentProject && (
+          <button
+            onClick={handleRefreshPreview}
+            aria-label="刷新预览"
+            className="flex items-center justify-center w-11 h-11 bg-slate-800 rounded-lg text-slate-300 active:bg-slate-700 transition-colors flex-shrink-0"
+          >
+            <IconRefresh size={18} />
           </button>
         )}
       </header>
@@ -267,12 +325,13 @@ function App() {
 
       {/* 主内容区（绑定手势导航） */}
       <div
-        className="flex-1 overflow-hidden relative"
+        className="flex-1 overflow-hidden relative landscape:max-h-[calc(100dvh-3.5rem)]"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
+        {/* E7: 每个标签内容块加 key + animate-tab-in 淡入过渡 */}
         {activeTab === 'editor' && state.currentProject && (
-          <div className="h-full">
+          <div key={activeTab + (activeFile || '')} className="h-full animate-tab-in">
             {state.currentProject.type === 'single' ? (
               <CodeEditor content={htmlContent} onChange={setHtmlContent} language="html" />
             ) : (
@@ -292,28 +351,34 @@ function App() {
         )}
 
         {activeTab === 'preview' && state.currentProject && (
-          <PreviewPanel html={htmlContent} css={cssContent} js={jsContent} />
+          <div key={activeTab} className="h-full animate-tab-in">
+            <PreviewPanel key={previewKey} html={htmlContent} css={cssContent} js={jsContent} />
+          </div>
         )}
 
         {activeTab === 'ai' && (
-          <AIAssistant onCodeGenerated={handleCodeGenerated} currentCode={htmlContent} />
+          <div key={activeTab} className="h-full animate-tab-in">
+            <AIAssistant onCodeGenerated={handleCodeGenerated} currentCode={htmlContent} />
+          </div>
         )}
 
         {activeTab === 'builder' && (
-          <APKBuilder />
+          <div key={activeTab} className="h-full animate-tab-in">
+            <APKBuilder />
+          </div>
         )}
 
         {/* 空状态 - 没有项目时 */}
         {!state.currentProject && (activeTab === 'editor' || activeTab === 'preview') && (
-          <div className="h-full flex flex-col items-center justify-center text-center px-8">
+          <div key={activeTab} className="h-full flex flex-col items-center justify-center text-center px-8 animate-tab-in">
             {activeTab === 'editor' ? (
               <>
                 <IconBird size={72} className="mb-5" />
                 <h2 className="text-white text-xl font-bold mb-2">欢迎使用织雀</h2>
                 <p className="text-slate-400 text-sm mb-6">移动端代码编辑器，随时随地编程</p>
                 <button
-                  onClick={() => { loadProjects(); setShowProjects(true); }}
-                  className="px-6 py-2.5 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors"
+                  onClick={() => { haptic(10); loadProjects(); setShowProjects(true); }}
+                  className="px-6 py-2.5 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 active:scale-[0.97] transition-all"
                 >
                   创建新项目
                 </button>
@@ -330,7 +395,7 @@ function App() {
 
       {/* 底部导航 */}
       <nav
-        className="flex items-center justify-around bg-slate-900/95 backdrop-blur border-t border-slate-800 flex-shrink-0"
+        className="flex items-center justify-around bg-slate-900/95 backdrop-blur border-t border-slate-800 flex-shrink-0 landscape:py-1 landscape:scale-90"
         style={{ paddingBottom: 'var(--safe-area-inset-bottom, 0px)' }}
       >
         {tabs.map((tab) => {
@@ -338,8 +403,8 @@ function App() {
           return (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex flex-col items-center gap-0.5 min-h-[44px] py-2 px-3 transition-all ${
+              onClick={() => { haptic(5); setActiveTab(tab.key); }}
+              className={`flex flex-col items-center gap-0.5 min-h-[44px] py-2 px-3 transition-all active:scale-[0.97] ${
                 activeTab === tab.key
                   ? 'text-cyan-400'
                   : 'text-slate-500 active:text-slate-300'
@@ -372,6 +437,10 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* 全局浮层容器：Toast 与 ConfirmSheet */}
+      <ToastContainer />
+      <ConfirmSheetContainer />
     </div>
   );
 }

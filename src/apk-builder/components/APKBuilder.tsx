@@ -3,15 +3,19 @@ import { apkBuilderService } from '../services/apkBuilderService';
 import { permissionService } from '@/permission-manager/services/permissionService';
 import { projectService } from '@/project-manager/services/projectService';
 import { appStore } from '@/common/store/appStore';
+import { useStore } from '@/common/hooks/useStore';
+import { toast } from '@/common/components/Toast';
+import { IconAlert } from '@/common/components/Icons';
 import { type Permission } from '@/common/types';
 
 export const APKBuilder = () => {
   const [isExporting, setIsExporting] = useState(false);
-  const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(null);
   const [packageName, setPackageName] = useState('com.example.app');
   const [versionName, setVersionName] = useState('1.0.0');
   const [versionCode, setVersionCode] = useState(1);
   const [appName, setAppName] = useState('我的应用');
+
+  const { permissionSettings, currentProject } = useStore();
 
   const permissions = permissionService.getAvailablePermissions();
 
@@ -21,11 +25,9 @@ export const APKBuilder = () => {
 
   const handleExport = async () => {
     setIsExporting(true);
-    setExportResult(null);
 
-    const currentProject = appStore.getState().currentProject;
     if (!currentProject) {
-      setExportResult({ success: false, message: '请先选择项目' });
+      toast.error('请先选择项目');
       setIsExporting(false);
       return;
     }
@@ -45,7 +47,7 @@ export const APKBuilder = () => {
     });
 
     const selectedPermissions = permissions
-      .filter((p) => appStore.getState().permissionSettings[p.name])
+      .filter((p) => permissionSettings[p.name])
       .map((p) => p.name);
 
     const config = {
@@ -60,7 +62,7 @@ export const APKBuilder = () => {
 
     const validation = apkBuilderService.validateConfig(config);
     if (!validation.valid) {
-      setExportResult({ success: false, message: validation.errors.join('\n') });
+      toast.error(validation.errors.join('；'));
       setIsExporting(false);
       return;
     }
@@ -68,10 +70,7 @@ export const APKBuilder = () => {
     const result = await apkBuilderService.exportConfig(config);
 
     if (!result.success || !result.configJson) {
-      setExportResult({
-        success: false,
-        message: result.error || '导出失败',
-      });
+      toast.error(result.error || '导出失败');
       setIsExporting(false);
       return;
     }
@@ -88,12 +87,9 @@ export const APKBuilder = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      setExportResult({ success: true, message: '配置已导出' });
+      toast.success('配置已导出');
     } catch (error) {
-      setExportResult({
-        success: false,
-        message: error instanceof Error ? error.message : '下载失败',
-      });
+      toast.error(error instanceof Error ? error.message : '下载失败');
     }
 
     setIsExporting(false);
@@ -162,21 +158,45 @@ export const APKBuilder = () => {
         {/* 权限选择 */}
         <div className="bg-slate-900 rounded-xl p-4">
           <h3 className="text-white font-medium text-sm mb-3">权限选择</h3>
-          <div className="grid grid-cols-4 gap-2">
-            {permissions.map((permission) => (
-              <button
-                key={permission.name}
-                onClick={() => togglePermission(permission)}
-                className={`min-h-[44px] p-2.5 rounded-lg border transition-all flex flex-col items-center gap-1 ${
-                  appStore.getState().permissionSettings[permission.name]
-                    ? 'bg-cyan-500/15 border-cyan-500 text-cyan-400'
-                    : 'bg-slate-800 border-slate-700 text-slate-500'
-                }`}
-              >
-                <span className="text-lg">{permission.icon}</span>
-                <span className="text-[11px] font-medium">{permission.description}</span>
-              </button>
-            ))}
+          <div className="space-y-2">
+            {permissions.map((permission) => {
+              const enabled = !!permissionSettings[permission.name];
+              return (
+                <div
+                  key={permission.name}
+                  className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
+                    enabled
+                      ? 'bg-slate-800 border-cyan-500/30'
+                      : 'bg-slate-900 border-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <IconAlert size={20} className="text-slate-400 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <h3 className="text-white font-medium text-sm">{permission.description}</h3>
+                      <p className="text-slate-400 text-xs truncate">{permission.name}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => togglePermission(permission)}
+                    aria-label={`切换${permission.description}权限`}
+                    className="min-h-[44px] flex items-center flex-shrink-0"
+                  >
+                    <span
+                      className={`relative w-11 h-6 rounded-full transition-colors ${
+                        enabled ? 'bg-cyan-500' : 'bg-slate-700'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                          enabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </span>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -188,17 +208,6 @@ export const APKBuilder = () => {
         >
           {isExporting ? '正在导出...' : '导出配置'}
         </button>
-
-        {/* 结果 */}
-        {exportResult && (
-          <div
-            className={`p-3 rounded-xl text-sm whitespace-pre-wrap ${
-              exportResult.success ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'
-            }`}
-          >
-            {exportResult.message}
-          </div>
-        )}
 
         <div className="text-center text-slate-400 text-xs pb-2 leading-relaxed">
           真实 APK 打包请使用桌面端构建工具或云端构建服务。此处导出的配置文件可用于后续构建。

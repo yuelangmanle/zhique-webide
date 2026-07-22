@@ -64,3 +64,61 @@ export const IconBird = ({ size = 48, className = '', ariaLabel }: IconProps) =>
     <path d="M27 24L33 26L27 28Z" fill="#fbbf24"/>
   </svg>
 );
+
+export const IconAlert = ({ size = 20, className = '', ariaLabel }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaLabel ? undefined : 'true'} role={ariaLabel ? 'img' : undefined} aria-label={ariaLabel}>
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
+export const IconRefresh = ({ size = 20, className = '', ariaLabel }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaLabel ? undefined : 'true'} role={ariaLabel ? 'img' : undefined} aria-label={ariaLabel}>
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+export const IconPlus = ({ size = 20, className = '', ariaLabel }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaLabel ? undefined : 'true'} role={ariaLabel ? 'img' : undefined} aria-label={ariaLabel}>
+    <line x1="12" y1="5" x2="12" y2="19" />
+    <line x1="5" y1="12" x2="19" y2="12" />
+  </svg>
+);
+
+export const IconTrash = ({ size = 20, className = '', ariaLabel }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaLabel ? undefined : 'true'} role={ariaLabel ? 'img' : undefined} aria-label={ariaLabel}>
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
+export const IconClose = ({ size = 20, className = '', ariaLabel }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaLabel ? undefined : 'true'} role={ariaLabel ? 'img' : undefined} aria-label={ariaLabel}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+export const IconChevronUp = ({ size = 20, className = '', ariaLabel }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaLabel ? undefined : 'true'} role={ariaLabel ? 'img' : undefined} aria-label={ariaLabel}>
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+);
+
+export const IconChevronDown = ({ size = 20, className = '', ariaLabel }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaLabel ? undefined : 'true'} role={ariaLabel ? 'img' : undefined} aria-label={ariaLabel}>
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+);
+
+export const IconScreenRotate = ({ size = 20, className = '', ariaLabel }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden={ariaLabel ? undefined : 'true'} role={ariaLabel ? 'img' : undefined} aria-label={ariaLabel}>
+    <path d="M8 3H5a2 2 0 0 0-2 2v3" />
+    <path d="M21 8V5a2 2 0 0 0-2-2h-3" />
+    <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+    <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+  </svg>
+);

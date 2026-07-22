@@ -25,10 +25,18 @@ export default {
           700: '#334155',
           600: '#475569',
           500: '#64748b',
-        }
+        },
+        'lang-html': '#fb923c',
+        'lang-css': '#60a5fa',
+        'lang-js': '#facc15',
       },
       fontFamily: {
         mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+      },
+      borderRadius: {
+        'icon': '8px',
+        'btn': '12px',
+        'card': '16px',
       },
     },
   },

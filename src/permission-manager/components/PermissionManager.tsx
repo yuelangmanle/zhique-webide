@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { permissionService } from '../services/permissionService';
 import { appStore } from '../../common/store/appStore';
 import { type PermissionState } from '../../common/types';
+import { IconAlert } from '@/common/components/Icons';
 
 interface PermissionManagerProps {
   onClose?: () => void;
@@ -12,37 +13,31 @@ const permissionGroups = [
     name: '相机',
     key: 'camera',
     description: '访问设备摄像头',
-    icon: '📷',
   },
   {
     name: '相册',
     key: 'photos',
     description: '访问图片相册',
-    icon: '🖼️',
   },
   {
     name: '文件存储',
     key: 'storage',
     description: '访问设备存储空间',
-    icon: '📁',
   },
   {
     name: '位置信息',
     key: 'location',
     description: '获取设备地理位置',
-    icon: '📍',
   },
   {
     name: '蓝牙',
     key: 'bluetooth',
     description: '使用蓝牙功能',
-    icon: '🔵',
   },
   {
     name: '通知推送',
     key: 'notification',
     description: '发送推送通知',
-    icon: '🔔',
   },
 ];
 
@@ -105,7 +100,7 @@ export const PermissionManager = ({ onClose }: PermissionManagerProps) => {
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.625rem)' }}
       >
         <div className="flex items-center gap-2">
-          <span className="text-xl">🔒</span>
+          <IconAlert size={20} className="text-cyan-400" />
           <h2 className="text-white font-bold text-sm">权限管理</h2>
         </div>
         {onClose && (
@@ -136,7 +131,7 @@ export const PermissionManager = ({ onClose }: PermissionManagerProps) => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="text-2xl flex-shrink-0">{group.icon}</span>
+                    <IconAlert size={22} className="text-slate-400 flex-shrink-0" />
                     <div className="min-w-0">
                       <h3 className="text-white font-medium text-sm">{group.name}</h3>
                       <p className="text-slate-400 text-xs truncate">{group.description}</p>

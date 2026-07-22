@@ -3,6 +3,9 @@ import { projectService } from '../services/projectService';
 import { appStore } from '@/common/store/appStore';
 import { type Project } from '@/common/types';
 import { formatDate } from '@/common/utils';
+import { toast } from '@/common/components/Toast';
+import { confirm } from '@/common/components/ConfirmSheet';
+import { IconPlus, IconTrash } from '@/common/components/Icons';
 
 interface ProjectListProps {
   projects: Project[];
@@ -41,12 +44,18 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
 
   const handleDeleteProject = async (project: Project, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm(`确定要删除「${project.name}」吗？此操作不可恢复。`)) {
+    const ok = await confirm({
+      title: '删除项目',
+      message: `确定要删除"${project.name}"吗？此操作不可撤销。`,
+      confirmText: '删除',
+      cancelText: '取消',
+    });
+    if (ok) {
       try {
         await projectService.deleteProject(project.id);
         onProjectsChange();
       } catch (err) {
-        alert('删除失败: ' + (err instanceof Error ? err.message : '未知错误'));
+        toast.error('删除失败: ' + (err instanceof Error ? err.message : '未知错误'));
       }
     }
   };
@@ -60,11 +69,9 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
         </div>
         <button
           onClick={() => setShowCreateDialog(true)}
-          className="px-4 py-2 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors flex items-center gap-1"
+          className="px-4 py-2 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 active:scale-[0.97] transition-all flex items-center gap-1"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <IconPlus size={14} />
           新建
         </button>
       </div>
@@ -83,7 +90,7 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
             <div
               key={project.id}
               onClick={() => onSelectProject(project)}
-              className={`p-3.5 rounded-xl cursor-pointer border-l-[3px] transition-all active:scale-[0.98] flex items-center justify-between ${
+              className={`p-3.5 rounded-xl cursor-pointer border-l-[3px] transition-all active:scale-[0.97] flex items-center justify-between ${
                 appStore.getState().currentProject?.id === project.id
                   ? 'border-l-cyan-400 bg-slate-800'
                   : 'border-l-transparent bg-slate-800/50 active:bg-slate-800'
@@ -101,11 +108,9 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
               <button
                 onClick={(e) => handleDeleteProject(project, e)}
                 aria-label="删除项目"
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 active:text-red-400 transition-colors flex-shrink-0"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 active:text-red-400 active:scale-[0.97] transition-all flex-shrink-0"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                </svg>
+                <IconTrash size={16} />
               </button>
             </div>
           ))

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { aiService } from '../services/aiService';
 import { AIProvider } from '@/common/types';
 import { encrypt as cryptoEncrypt, decrypt as cryptoDecrypt } from '@/common/utils/crypto';
+import { toast } from '@/common/components/Toast';
 
 interface AIAssistantProps {
   onCodeGenerated: (code: string) => void;
@@ -101,7 +102,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
 
   const handleSaveSettings = async () => {
     if (!apiKey.trim()) {
-      alert('请输入 API Key');
+      toast.error('请输入 API Key');
       return;
     }
 
@@ -275,7 +276,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
                 <button
                   key={preset.id}
                   onClick={() => handlePresetChange(preset.id)}
-                  className={`min-h-[44px] py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className={`min-h-[44px] py-2 rounded-lg text-xs font-medium transition-all active:scale-[0.97] ${
                     selectedPreset === preset.id
                       ? 'bg-cyan-500 text-white'
                       : 'bg-slate-800 text-slate-400 active:bg-slate-700'
@@ -310,7 +311,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
           />
           <button
             onClick={handleSaveSettings}
-            className="w-full min-h-[44px] py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-lg active:bg-cyan-600 transition-colors"
+            className="w-full min-h-[44px] py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-lg active:bg-cyan-600 active:scale-[0.97] transition-all"
           >
             保存方案
           </button>
@@ -333,7 +334,8 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
       )}
 
       {/* 消息列表 */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3">
+        <div key={activeTab} className="space-y-3 animate-tab-in">
         {messages.length === 0 ? (
           <div className="text-center text-slate-500 py-12">
             <svg className="mx-auto mb-3" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -383,6 +385,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* 输入栏 */}
@@ -402,7 +405,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
         <button
           onClick={handleSend}
           disabled={isGenerating || !prompt.trim()}
-          className="px-4 py-2.5 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 disabled:bg-slate-800 disabled:text-slate-400 transition-colors"
+          className="px-4 py-2.5 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 active:scale-[0.97] disabled:bg-slate-800 disabled:text-slate-400 transition-all"
         >
           发送
         </button>

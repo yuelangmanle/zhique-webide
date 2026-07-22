@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { IconAlert } from '@/common/components/Icons';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -33,7 +34,9 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       return (
         <div className="h-[100dvh] w-screen bg-slate-950 flex items-center justify-center px-6">
           <div className="text-center max-w-sm w-full">
-            <div className="text-6xl mb-6">😵</div>
+            <div className="mb-6 flex justify-center text-red-500">
+              <IconAlert size={64} />
+            </div>
             <h1 className="text-white text-2xl font-bold mb-3">应用遇到问题</h1>
             <p className="text-slate-400 text-sm mb-2">很抱歉，应用发生了未预期的错误。</p>
             {this.state.error && (

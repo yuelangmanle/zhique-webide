@@ -56,6 +56,11 @@ input, textarea, .cm-content {
   border-radius: 3px;
 }
 
+@media (max-width: 768px) {
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+}
+
 @keyframes slide-up {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
@@ -95,3 +100,29 @@ input, textarea, .cm-content {
   border: none;
   background: white;
 }
+
+/* 深色主题阴影层级感 */
+.shadow-elevated { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3); }
+.shadow-overlay { box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4); }
+
+/* 标签切换动画 */
+.animate-tab-in { animation: tabIn 200ms ease-out; }
+@keyframes tabIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 中文显示字体（标题用） */
+.font-display { font-family: 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+/* Toast 淡入淡出动画 */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(12px); }
+}
+.animate-toast-in { animation: toastIn 200ms ease-out forwards; }
+.animate-toast-out { animation: toastOut 200ms ease-in forwards; }
