@@ -43,7 +43,7 @@ export interface APKBuildConfig {
 
 export interface BuildResult {
   success: boolean;
-  apkPath?: string;
+  configJson?: string;
   error?: string;
 }
 
@@ -63,14 +63,5 @@ export interface PermissionState {
 
 export interface AppState {
   currentProject: Project | null;
-  openedFiles: ProjectFile[];
-  selectedFile: ProjectFile | null;
-  editorContent: Record<string, string>;
-  previewMode: 'split' | 'full' | 'editor-only' | 'preview-only';
-  aiProvider: string;
-  aiProviders: AIProvider[];
-  buildConfig: APKBuildConfig;
   permissionSettings: Record<string, boolean>;
 }
-
-export type PreviewMode = AppState['previewMode'];

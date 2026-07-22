@@ -100,9 +100,10 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
               </div>
               <button
                 onClick={(e) => handleDeleteProject(project, e)}
-                className="p-2 text-slate-600 active:text-red-400 transition-colors flex-shrink-0"
+                aria-label="删除项目"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-600 active:text-red-400 transition-colors flex-shrink-0"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                 </svg>
               </button>

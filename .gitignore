@@ -1,6 +1,7 @@
 node_modules/
 dist/
 www/
+coverage/
 .env
 .env.local
 .env.production
@@ -8,12 +9,18 @@ www/
 Thumbs.db
 *.log
 
+# Capacitor 工程已移除（改为 zhique-apk 原生工程），保留忽略防止误提交
 android/
 ios/
 electron/
+capacitor.config.json
 
 .vscode/
 .idea/
 
 *.apk
 *.aab
+
+# 签名密钥（不应入库，安全考虑）
+*.keystore
+zhique-release.keystore

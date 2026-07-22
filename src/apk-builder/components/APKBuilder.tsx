@@ -5,9 +5,8 @@ import { appStore } from '@/common/store/appStore';
 import { type Permission } from '@/common/types';
 
 export const APKBuilder = () => {
-  const [isBuilding, setIsBuilding] = useState(false);
-  const [buildResult, setBuildResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [buildProgress, setBuildProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportResult, setExportResult] = useState<{ success: boolean; message: string } | null>(null);
   const [packageName, setPackageName] = useState('com.example.app');
   const [versionName, setVersionName] = useState('1.0.0');
   const [versionCode, setVersionCode] = useState(1);
@@ -15,10 +14,13 @@ export const APKBuilder = () => {
 
   const permissions = permissionService.getAvailablePermissions();
 
-  const handleBuild = async () => {
-    setIsBuilding(true);
-    setBuildResult(null);
-    setBuildProgress(0);
+  const sanitizeFileName = (name: string): string => {
+    return name.replace(/[^\w\u4e00-\u9fa5-]/g, '_').slice(0, 32) || 'app';
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    setExportResult(null);
 
     const selectedPermissions = permissions
       .filter((p) => appStore.getState().permissionSettings[p.name])
@@ -36,28 +38,43 @@ export const APKBuilder = () => {
 
     const validation = apkBuilderService.validateConfig(config);
     if (!validation.valid) {
-      setBuildResult({ success: false, message: validation.errors.join('\n') });
-      setIsBuilding(false);
+      setExportResult({ success: false, message: validation.errors.join('\n') });
+      setIsExporting(false);
       return;
     }
 
-    setBuildProgress(25);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const result = await apkBuilderService.exportConfig(config);
 
-    setBuildProgress(50);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (!result.success || !result.configJson) {
+      setExportResult({
+        success: false,
+        message: result.error || '导出失败',
+      });
+      setIsExporting(false);
+      return;
+    }
 
-    setBuildProgress(75);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      const blob = new Blob([result.configJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.href = url;
+      link.download = `zhique-config-${sanitizeFileName(appName)}-${timestamp}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-    const result = await apkBuilderService.build(config);
-    setBuildProgress(100);
+      setExportResult({ success: true, message: '配置已导出' });
+    } catch (error) {
+      setExportResult({
+        success: false,
+        message: error instanceof Error ? error.message : '下载失败',
+      });
+    }
 
-    setBuildResult({
-      success: result.success,
-      message: result.success ? `打包成功！路径：${result.apkPath}` : result.error || '打包失败',
-    });
-    setIsBuilding(false);
+    setIsExporting(false);
   };
 
   const togglePermission = (permission: Permission) => {
@@ -67,7 +84,7 @@ export const APKBuilder = () => {
   return (
     <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-800 flex-shrink-0">
-        <h2 className="text-white font-bold text-base">APK 打包</h2>
+        <h2 className="text-white font-bold text-base">配置导出</h2>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -141,44 +158,28 @@ export const APKBuilder = () => {
           </div>
         </div>
 
-        {/* 打包按钮 */}
+        {/* 导出按钮 */}
         <button
-          onClick={handleBuild}
-          disabled={isBuilding}
+          onClick={handleExport}
+          disabled={isExporting}
           className="w-full py-3.5 bg-emerald-500 text-white font-bold rounded-xl active:bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 transition-colors"
         >
-          {isBuilding ? '正在打包...' : '开始打包'}
+          {isExporting ? '正在导出...' : '导出配置'}
         </button>
 
-        {/* 进度条 */}
-        {isBuilding && (
-          <div className="bg-slate-900 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-slate-400 text-xs">打包进度</span>
-              <span className="text-white font-semibold text-sm">{buildProgress}%</span>
-            </div>
-            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-cyan-500 transition-all duration-300 ease-out rounded-full"
-                style={{ width: `${buildProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* 结果 */}
-        {buildResult && (
+        {exportResult && (
           <div
             className={`p-3 rounded-xl text-sm whitespace-pre-wrap ${
-              buildResult.success ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'
+              exportResult.success ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'
             }`}
           >
-            {buildResult.message}
+            {exportResult.message}
           </div>
         )}
 
-        <div className="text-center text-slate-600 text-xs pb-2">
-          权限用于生成的 APK，不影响织雀本身
+        <div className="text-center text-slate-600 text-xs pb-2 leading-relaxed">
+          真实 APK 打包请使用桌面端构建工具或云端构建服务。此处导出的配置文件可用于后续构建。
         </div>
       </div>
     </div>

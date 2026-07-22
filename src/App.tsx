@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type TouchEvent as ReactTouchEvent } from 'react';
 import { ProjectList } from './project-manager/components/ProjectList';
 import { CodeEditor } from './editor/components/CodeEditor';
 import { PreviewPanel } from './preview/components/PreviewPanel';
@@ -12,6 +12,7 @@ import { IconFolder, IconSave, IconCheck, IconEdit, IconEye, IconAI, IconPackage
 
 type TabView = 'editor' | 'preview' | 'ai' | 'builder';
 type FileType = 'html' | 'css' | 'js';
+type SaveStatus = 'idle' | 'saving' | 'saved';
 
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -21,8 +22,15 @@ function App() {
   const [jsContent, setJsContent] = useState('');
   const [showProjects, setShowProjects] = useState(false);
   const [activeFile, setActiveFile] = useState<FileType>('html');
-  const [showSaved, setShowSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [loading, setLoading] = useState(true);
+
+  // 手势导航：记录触摸起点（useRef 避免重渲染）
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  // 自动保存：debounce 计时器与状态重置计时器
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const state = useStore();
 
@@ -89,9 +97,9 @@ function App() {
     setHtmlContent(code);
   };
 
-  const handleSaveFiles = async () => {
+  // 自动保存逻辑（不弹 alert，失败只 console.error）
+  const autoSave = async () => {
     if (!state.currentProject) return;
-
     try {
       if (state.currentProject.type === 'single') {
         await projectService.writeFile(state.currentProject.id, 'index.html', htmlContent);
@@ -100,13 +108,35 @@ function App() {
         await projectService.writeFile(state.currentProject.id, 'style.css', cssContent);
         await projectService.writeFile(state.currentProject.id, 'script.js', jsContent);
       }
-      setShowSaved(true);
-      setTimeout(() => setShowSaved(false), 1500);
+      setSaveStatus('saved');
       loadProjects(); // 刷新更新时间
+      if (savedResetTimer.current) clearTimeout(savedResetTimer.current);
+      savedResetTimer.current = setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (e) {
-      alert('保存失败: ' + (e instanceof Error ? e.message : '未知错误'));
+      console.error('自动保存失败', e);
+      setSaveStatus('idle');
     }
   };
+
+  // 手动保存：取消 pending debounce，立即触发 autoSave
+  const handleManualSave = () => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSave();
+  };
+
+  // debounce 自动保存：内容变化 1s 后触发
+  useEffect(() => {
+    if (!state.currentProject) return;
+    setSaveStatus('saving');
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      autoSave();
+    }, 1000);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [htmlContent, cssContent, jsContent]);
 
   const fileTabs: { key: FileType; label: string; color: string }[] = [
     { key: 'html', label: 'HTML', color: 'text-orange-400' },
@@ -120,6 +150,42 @@ function App() {
     { key: 'ai', label: 'AI', icon: IconAI },
     { key: 'builder', label: '打包', icon: IconPackage },
   ];
+
+  // 手势导航：触摸开始，记录起点
+  const handleTouchStart = (e: ReactTouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  // 手势导航：触摸结束，计算滑动方向并切换标签
+  const handleTouchEnd = (e: ReactTouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    const deltaX = endX - touchStartX.current;
+    const deltaY = endY - touchStartY.current;
+    touchStartX.current = null;
+    touchStartY.current = null;
+
+    const threshold = 50;
+    // 水平位移需超过阈值，且水平占主导（避免干扰垂直滚动/选择）
+    if (Math.abs(deltaX) <= threshold) return;
+    if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+    const tabsOrder = tabs.map((t) => t.key);
+    const currentIndex = tabsOrder.indexOf(activeTab);
+    if (currentIndex === -1) return;
+
+    if (deltaX > 0) {
+      // 右滑 → 左邻标签（循环）
+      const prevIndex = (currentIndex - 1 + tabsOrder.length) % tabsOrder.length;
+      setActiveTab(tabsOrder[prevIndex]);
+    } else {
+      // 左滑 → 右邻标签（循环）
+      const nextIndex = (currentIndex + 1) % tabsOrder.length;
+      setActiveTab(tabsOrder[nextIndex]);
+    }
+  };
 
   if (loading) {
     return (
@@ -142,7 +208,8 @@ function App() {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             onClick={() => { loadProjects(); setShowProjects(true); }}
-            className="flex items-center justify-center w-9 h-9 bg-slate-800 rounded-lg text-slate-300 active:bg-slate-700 transition-colors flex-shrink-0"
+            aria-label="项目列表"
+            className="flex items-center justify-center w-11 h-11 bg-slate-800 rounded-lg text-slate-300 active:bg-slate-700 transition-colors flex-shrink-0"
           >
             <IconFolder size={18} />
           </button>
@@ -156,13 +223,20 @@ function App() {
           </div>
         </div>
 
+        {/* 保存状态指示器（点击可手动立即保存） */}
         {activeTab === 'editor' && state.currentProject && (
           <button
-            onClick={handleSaveFiles}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg active:bg-emerald-600 transition-colors flex-shrink-0"
+            onClick={handleManualSave}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex-shrink-0 ${
+              saveStatus === 'saved'
+                ? 'bg-emerald-500 text-white active:bg-emerald-600'
+                : saveStatus === 'saving'
+                ? 'bg-slate-700 text-slate-400'
+                : 'bg-slate-800 text-slate-400 active:bg-slate-700'
+            }`}
           >
-            {showSaved ? <IconCheck size={14} /> : <IconSave size={14} />}
-            {showSaved ? '已保存' : '保存'}
+            {saveStatus === 'saved' ? <IconCheck size={14} /> : <IconSave size={14} />}
+            {saveStatus === 'saving' ? '保存中...' : '已保存'}
           </button>
         )}
       </header>
@@ -189,8 +263,12 @@ function App() {
         </div>
       )}
 
-      {/* 主内容区 */}
-      <div className="flex-1 overflow-hidden relative">
+      {/* 主内容区（绑定手势导航） */}
+      <div
+        className="flex-1 overflow-hidden relative"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {activeTab === 'editor' && state.currentProject && (
           <div className="h-full">
             {state.currentProject.type === 'single' ? (

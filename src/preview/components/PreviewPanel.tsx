@@ -9,6 +9,7 @@ interface PreviewPanelProps {
 
 export const PreviewPanel = ({ html, css, js }: PreviewPanelProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const renderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [consoleMessages, setConsoleMessages] = useState<ConsoleMessage[]>([]);
   const [showConsole, setShowConsole] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -28,9 +29,15 @@ export const PreviewPanel = ({ html, css, js }: PreviewPanelProps) => {
   }, []);
 
   useEffect(() => {
-    previewService.render(html, css, js);
-    previewService.clearConsole();
-    setConsoleMessages([]);
+    if (renderTimer.current) clearTimeout(renderTimer.current);
+    renderTimer.current = setTimeout(() => {
+      previewService.render(html, css, js);
+      previewService.clearConsole();
+      setConsoleMessages([]);
+    }, 300);
+    return () => {
+      if (renderTimer.current) clearTimeout(renderTimer.current);
+    };
   }, [html, css, js]);
 
   const getMessageColor = (type: string): string => {
@@ -66,9 +73,10 @@ export const PreviewPanel = ({ html, css, js }: PreviewPanelProps) => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowHelp(!showHelp)}
-            className="w-7 h-7 flex items-center justify-center text-slate-500 active:text-cyan-400 transition-colors rounded-lg"
+            aria-label="帮助"
+            className="w-11 h-11 flex items-center justify-center text-slate-500 active:text-cyan-400 transition-colors rounded-lg"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
               <circle cx="12" cy="12" r="10" />
               <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
               <line x1="12" y1="17" x2="12" y2="17" />
@@ -76,7 +84,7 @@ export const PreviewPanel = ({ html, css, js }: PreviewPanelProps) => {
           </button>
           <button
             onClick={() => setShowConsole(!showConsole)}
-            className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
+            className={`min-h-[44px] px-3 py-2.5 text-xs font-medium rounded-lg transition-colors ${
               showConsole
                 ? 'bg-cyan-500 text-white'
                 : 'bg-slate-800 text-slate-400'

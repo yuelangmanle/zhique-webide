@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { aiService } from '../services/aiService';
 import { AIProvider } from '@/common/types';
+import { encrypt as cryptoEncrypt, decrypt as cryptoDecrypt } from '@/common/utils/crypto';
 
 interface AIAssistantProps {
   onCodeGenerated: (code: string) => void;
@@ -63,9 +64,11 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
             setSelectedPreset(active.id);
             setApiUrl(active.baseURL);
             setModel(active.model);
-            // 恢复 API Key
+            // 恢复 API Key（解密后使用）
             const savedKey = localStorage.getItem('zhique-ai-key-' + active.id);
-            if (savedKey) setApiKey(savedKey);
+            if (savedKey) {
+              cryptoDecrypt(savedKey).then((decrypted) => setApiKey(decrypted));
+            }
           }
         }
       }
@@ -86,13 +89,17 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
         setApiUrl(preset.baseURL);
         setModel(preset.model);
       }
-      // 恢复该方案的 API Key
+      // 恢复该方案的 API Key（解密后使用）
       const savedKey = localStorage.getItem('zhique-ai-key-' + presetId);
-      setApiKey(savedKey || '');
+      if (savedKey) {
+        cryptoDecrypt(savedKey).then((decrypted) => setApiKey(decrypted));
+      } else {
+        setApiKey('');
+      }
     }
   };
 
-  const handleSaveSettings = () => {
+  const handleSaveSettings = async () => {
     if (!apiKey.trim()) {
       alert('请输入 API Key');
       return;
@@ -111,7 +118,9 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     setSavedProviders(updated);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     localStorage.setItem(ACTIVE_KEY, provider.id);
-    localStorage.setItem('zhique-ai-key-' + provider.id, apiKey.trim());
+    // API Key 加密后存储
+    const encryptedKey = await cryptoEncrypt(apiKey.trim());
+    localStorage.setItem('zhique-ai-key-' + provider.id, encryptedKey);
 
     // 注册到 aiService
     const aiProvider: AIProvider = {
@@ -215,7 +224,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
   };
 
   const SettingsIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
@@ -243,7 +252,8 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
         ))}
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="px-3 text-slate-500 active:text-cyan-400 transition-colors"
+          aria-label="API 设置"
+          className="min-h-[44px] px-3 py-2.5 text-slate-500 active:text-cyan-400 transition-colors"
         >
           <SettingsIcon />
         </button>

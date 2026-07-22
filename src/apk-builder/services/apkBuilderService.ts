@@ -2,24 +2,20 @@ import { APKBuildConfig, BuildResult } from '@/common/types';
 import { permissionService } from '@/permission-manager/services/permissionService';
 
 class APKBuilderService {
-  async build(config: APKBuildConfig): Promise<BuildResult> {
+  async exportConfig(config: APKBuildConfig): Promise<BuildResult> {
     try {
-      const androidPermissions = permissionService.getAndroidPermissionNames(config.permissions);
-      const manifest = this.generateAndroidManifest(config.packageName, androidPermissions, config.appName || '我的应用');
-      const buildGradle = this.generateBuildGradle(config.packageName, config.versionName, config.versionCode);
+      const validation = this.validateConfig(config);
+      if (!validation.valid) {
+        return {
+          success: false,
+          error: validation.errors.join('\n'),
+        };
+      }
 
-      // 保存构建配置到 localStorage
-      const buildConfig = {
-        ...config,
-        manifest,
-        buildGradle,
-        createdAt: new Date().toISOString(),
-      };
-      localStorage.setItem('zhique-last-build', JSON.stringify(buildConfig));
-
+      const configJson = this.generateConfigJson(config);
       return {
         success: true,
-        apkPath: '配置已保存，请使用云端构建',
+        configJson,
       };
     } catch (error) {
       return {
@@ -80,6 +76,33 @@ class APKBuilderService {
 }`;
   }
 
+  private generateConfigJson(config: APKBuildConfig): string {
+    const androidPermissions = permissionService.getAndroidPermissionNames(config.permissions);
+    const manifest = this.generateAndroidManifest(
+      config.packageName,
+      androidPermissions,
+      config.appName || '我的应用',
+    );
+    const buildGradle = this.generateBuildGradle(config.packageName, config.versionName, config.versionCode);
+
+    const fullConfig = {
+      appConfig: {
+        appName: config.appName || '我的应用',
+        packageName: config.packageName,
+        versionName: config.versionName,
+        versionCode: config.versionCode,
+        icon: config.icon,
+        permissions: config.permissions,
+        androidPermissions,
+      },
+      manifest,
+      buildGradle,
+      exportedAt: new Date().toISOString(),
+    };
+
+    return JSON.stringify(fullConfig, null, 2);
+  }
+
   validateConfig(config: APKBuildConfig): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
@@ -91,12 +114,8 @@ class APKBuilderService {
       errors.push('版本号格式无效（需 X.Y.Z 格式）');
     }
 
-    if (config.versionCode <= 0) {
+    if (!config.versionCode || config.versionCode <= 0) {
       errors.push('版本代码必须为正数');
-    }
-
-    if (!config.webFiles || config.webFiles.length < 10) {
-      errors.push('网页内容为空或太小');
     }
 
     return {
