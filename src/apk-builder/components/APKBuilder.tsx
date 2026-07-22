@@ -11,7 +11,7 @@ export const APKBuilder = () => {
   const [packageName, setPackageName] = useState('com.example.app');
   const [versionName, setVersionName] = useState('1.0.0');
   const [versionCode, setVersionCode] = useState(1);
-  const [appName, setAppName] = useState('My App');
+  const [appName, setAppName] = useState('我的应用');
 
   const permissions = permissionService.getAvailablePermissions();
 
@@ -55,7 +55,7 @@ export const APKBuilder = () => {
 
     setBuildResult({
       success: result.success,
-      message: result.success ? `APK built successfully! Path: ${result.apkPath}` : result.error || 'Build failed',
+      message: result.success ? `打包成功！路径：${result.apkPath}` : result.error || '打包失败',
     });
     setIsBuilding(false);
   };
@@ -65,114 +65,121 @@ export const APKBuilder = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-dark-900 overflow-hidden">
-      <div className="px-4 py-3 border-b border-dark-700">
-        <h2 className="text-lg font-bold text-white">APK Builder</h2>
+    <div className="flex flex-col h-full bg-slate-950 overflow-hidden">
+      <div className="px-4 py-3 border-b border-slate-800 flex-shrink-0">
+        <h2 className="text-white font-bold text-base">APK 打包</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="bg-dark-800 rounded-xl p-4">
-          <h3 className="text-white font-semibold mb-4">App Configuration</h3>
-          
-          <div className="space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        {/* 应用配置 */}
+        <div className="bg-slate-900 rounded-xl p-4 space-y-3">
+          <h3 className="text-white font-medium text-sm">应用配置</h3>
+
+          <div>
+            <label className="block text-slate-500 text-xs mb-1.5">应用名称</label>
+            <input
+              type="text"
+              value={appName}
+              onChange={(e) => setAppName(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm focus:outline-none focus:border-cyan-500 transition-colors"
+              placeholder="我的应用"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-500 text-xs mb-1.5">包名</label>
+            <input
+              type="text"
+              value={packageName}
+              onChange={(e) => setPackageName(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-cyan-500 transition-colors"
+              placeholder="com.example.app"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-gray-400 text-sm mb-2">App Name</label>
+              <label className="block text-slate-500 text-xs mb-1.5">版本名</label>
               <input
                 type="text"
-                value={appName}
-                onChange={(e) => setAppName(e.target.value)}
-                className="w-full px-4 py-2 bg-dark-900 border border-dark-600 rounded-lg text-white focus:outline-none focus:border-primary-500 transition-colors"
-                placeholder="My App"
+                value={versionName}
+                onChange={(e) => setVersionName(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-cyan-500 transition-colors"
+                placeholder="1.0.0"
               />
             </div>
-
             <div>
-              <label className="block text-gray-400 text-sm mb-2">Package Name</label>
+              <label className="block text-slate-500 text-xs mb-1.5">版本号</label>
               <input
-                type="text"
-                value={packageName}
-                onChange={(e) => setPackageName(e.target.value)}
-                className="w-full px-4 py-2 bg-dark-900 border border-dark-600 rounded-lg text-white focus:outline-none focus:border-primary-500 transition-colors font-mono text-sm"
-                placeholder="com.example.app"
+                type="number"
+                value={versionCode}
+                onChange={(e) => setVersionCode(Number(e.target.value))}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-cyan-500 transition-colors"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-400 text-sm mb-2">Version Name</label>
-                <input
-                  type="text"
-                  value={versionName}
-                  onChange={(e) => setVersionName(e.target.value)}
-                  className="w-full px-4 py-2 bg-dark-900 border border-dark-600 rounded-lg text-white focus:outline-none focus:border-primary-500 transition-colors font-mono text-sm"
-                  placeholder="1.0.0"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-400 text-sm mb-2">Version Code</label>
-                <input
-                  type="number"
-                  value={versionCode}
-                  onChange={(e) => setVersionCode(Number(e.target.value))}
-                  className="w-full px-4 py-2 bg-dark-900 border border-dark-600 rounded-lg text-white focus:outline-none focus:border-primary-500 transition-colors font-mono text-sm"
-                />
-              </div>
             </div>
           </div>
         </div>
 
-        <div className="bg-dark-800 rounded-xl p-4">
-          <h3 className="text-white font-semibold mb-4">Permissions</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {/* 权限选择 */}
+        <div className="bg-slate-900 rounded-xl p-4">
+          <h3 className="text-white font-medium text-sm mb-3">权限选择</h3>
+          <div className="grid grid-cols-4 gap-2">
             {permissions.map((permission) => (
               <button
                 key={permission.name}
                 onClick={() => togglePermission(permission)}
-                className={`p-3 rounded-lg border-2 transition-all duration-200 flex flex-col items-center gap-1 ${
+                className={`p-2.5 rounded-lg border transition-all flex flex-col items-center gap-1 ${
                   appStore.getState().permissionSettings[permission.name]
-                    ? 'bg-primary-500/20 border-primary-500 text-white'
-                    : 'bg-dark-700 border-dark-600 text-gray-400 hover:border-dark-500'
+                    ? 'bg-cyan-500/15 border-cyan-500 text-cyan-400'
+                    : 'bg-slate-800 border-slate-700 text-slate-500'
                 }`}
               >
-                <span className="text-xl">{permission.icon}</span>
-                <span className="text-xs font-medium">{permission.description}</span>
+                <span className="text-lg">{permission.icon}</span>
+                <span className="text-[10px] font-medium">{permission.description}</span>
               </button>
             ))}
           </div>
         </div>
 
+        {/* 打包按钮 */}
         <button
           onClick={handleBuild}
           disabled={isBuilding}
-          className="w-full py-4 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 disabled:bg-dark-600 disabled:cursor-not-allowed transition-colors active:scale-[0.98]"
+          className="w-full py-3.5 bg-emerald-500 text-white font-bold rounded-xl active:bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 transition-colors"
         >
-          {isBuilding ? 'Building APK...' : 'Build APK'}
+          {isBuilding ? '正在打包...' : '开始打包'}
         </button>
 
+        {/* 进度条 */}
         {isBuilding && (
-          <div className="bg-dark-800 rounded-xl p-4">
+          <div className="bg-slate-900 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-400 text-sm">Build Progress</span>
-              <span className="text-white font-semibold">{buildProgress}%</span>
+              <span className="text-slate-400 text-xs">打包进度</span>
+              <span className="text-white font-semibold text-sm">{buildProgress}%</span>
             </div>
-            <div className="h-2 bg-dark-700 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary-500 transition-all duration-300 ease-out"
+                className="h-full bg-cyan-500 transition-all duration-300 ease-out rounded-full"
                 style={{ width: `${buildProgress}%` }}
               />
             </div>
           </div>
         )}
 
+        {/* 结果 */}
         {buildResult && (
           <div
-            className={`p-4 rounded-xl font-mono text-sm whitespace-pre-wrap ${
-              buildResult.success ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+            className={`p-3 rounded-xl text-sm whitespace-pre-wrap ${
+              buildResult.success ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'
             }`}
           >
             {buildResult.message}
           </div>
         )}
+
+        <div className="text-center text-slate-600 text-xs pb-2">
+          权限用于生成的 APK，不影响织雀本身
+        </div>
       </div>
     </div>
   );

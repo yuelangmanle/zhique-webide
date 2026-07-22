@@ -4,22 +4,23 @@ import { CodeEditor } from './editor/components/CodeEditor';
 import { PreviewPanel } from './preview/components/PreviewPanel';
 import { AIAssistant } from './ai-assistant/components/AIAssistant';
 import { APKBuilder } from './apk-builder/components/APKBuilder';
-import { BottomNav } from './common/components/BottomNav';
 import { projectService } from './project-manager/services/projectService';
 import { appStore } from './common/store/appStore';
 import { useStore } from './common/hooks/useStore';
 import { type Project } from './common/types';
 
-type MainView = 'editor' | 'ai' | 'builder';
+type TabView = 'editor' | 'preview' | 'ai' | 'builder';
+type FileType = 'html' | 'css' | 'js';
 
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [activeView, setActiveView] = useState<MainView>('editor');
+  const [activeTab, setActiveTab] = useState<TabView>('editor');
   const [htmlContent, setHtmlContent] = useState('');
   const [cssContent, setCssContent] = useState('');
   const [jsContent, setJsContent] = useState('');
-  const [showSidebar, setShowSidebar] = useState(true);
-  const [mobilePreviewMode, setMobilePreviewMode] = useState<'editor' | 'preview'>('editor');
+  const [showProjects, setShowProjects] = useState(false);
+  const [activeFile, setActiveFile] = useState<FileType>('html');
+  const [showSaved, setShowSaved] = useState(false);
 
   const state = useStore();
 
@@ -49,10 +50,7 @@ function App() {
       setCssContent(css);
       setJsContent(js);
     }
-
-    if (window.innerWidth < 640) {
-      setShowSidebar(false);
-    }
+    setShowProjects(false);
   };
 
   const handleCodeGenerated = (code: string) => {
@@ -69,171 +67,176 @@ function App() {
       await projectService.writeFile(state.currentProject.id, 'style.css', cssContent);
       await projectService.writeFile(state.currentProject.id, 'script.js', jsContent);
     }
+    setShowSaved(true);
+    setTimeout(() => setShowSaved(false), 1500);
   };
 
-  return (
-    <div className="h-screen w-screen bg-dark-900 flex overflow-hidden">
-      <aside
-        className={`fixed sm:static inset-y-0 left-0 z-40 transform transition-transform duration-300 ${
-          showSidebar ? 'translate-x-0' : '-translate-x-full'
-        } sm:translate-x-0 w-64 sm:w-64 border-r border-dark-700`}
-      >
-        <ProjectList projects={projects} onSelectProject={handleSelectProject} onClose={() => setShowSidebar(false)} />
-      </aside>
+  const fileTabs: { key: FileType; label: string }[] = [
+    { key: 'html', label: 'HTML' },
+    { key: 'css', label: 'CSS' },
+    { key: 'js', label: 'JS' },
+  ];
 
-      {showSidebar && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 sm:hidden"
-          onClick={() => setShowSidebar(false)}
-        />
+  const tabs: { key: TabView; label: string; icon: string }[] = [
+    { key: 'editor', label: '编辑', icon: '📝' },
+    { key: 'preview', label: '预览', icon: '👁' },
+    { key: 'ai', label: 'AI', icon: '🤖' },
+    { key: 'builder', label: '打包', icon: '📦' },
+  ];
+
+  return (
+    <div className="h-[100dvh] w-screen bg-slate-950 flex flex-col overflow-hidden">
+      {/* 顶部栏 */}
+      <header
+        className="flex items-center justify-between px-3 py-2.5 bg-slate-900 border-b border-slate-800 flex-shrink-0"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.625rem)' }}
+      >
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button
+            onClick={() => setShowProjects(true)}
+            className="flex items-center gap-2 px-2.5 py-1.5 bg-slate-800 rounded-lg text-slate-300 active:bg-slate-700 transition-colors flex-shrink-0"
+          >
+            <span className="text-base">📂</span>
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="text-white font-bold text-sm truncate">
+              {state.currentProject?.name || '织雀'}
+            </div>
+            <div className="text-slate-500 text-[10px] truncate">
+              {state.currentProject ? '已打开项目' : '点击文件夹图标选择项目'}
+            </div>
+          </div>
+        </div>
+
+        {activeTab === 'editor' && state.currentProject && (
+          <button
+            onClick={handleSaveFiles}
+            className="px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg active:bg-emerald-600 transition-colors flex-shrink-0"
+          >
+            {showSaved ? '✓ 已保存' : '保存'}
+          </button>
+        )}
+      </header>
+
+      {/* 文件标签栏 */}
+      {activeTab === 'editor' && state.currentProject?.type === 'folder' && (
+        <div className="flex items-center bg-slate-900 border-b border-slate-800 flex-shrink-0">
+          {fileTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveFile(tab.key)}
+              className={`flex-1 py-2 text-xs font-medium transition-colors relative ${
+                activeFile === tab.key
+                  ? 'text-cyan-400'
+                  : 'text-slate-500 active:text-slate-300'
+              }`}
+            >
+              {tab.label}
+              {activeFile === tab.key && (
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
+              )}
+            </button>
+          ))}
+        </div>
       )}
 
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between px-4 py-3 bg-dark-800 border-b border-dark-700">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowSidebar(true)}
-              className="sm:hidden p-2 text-gray-400 hover:text-white transition-colors"
-            >
-              ☰
-            </button>
-            <div className="flex items-center gap-2">
-              <span className="text-xl">💻</span>
-              <span className="text-white font-bold text-lg">织雀</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {activeView === 'editor' && state.currentProject && (
-              <button
-                onClick={handleSaveFiles}
-                className="px-3 py-1.5 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
-              >
-                Save
-              </button>
-            )}
-
-            <nav className="hidden sm:flex items-center gap-1 bg-dark-700 rounded-lg p-1">
-              <button
-                onClick={() => setActiveView('editor')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeView === 'editor'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                Editor
-              </button>
-              <button
-                onClick={() => setActiveView('ai')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeView === 'ai'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                AI Assistant
-              </button>
-              <button
-                onClick={() => setActiveView('builder')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  activeView === 'builder'
-                    ? 'bg-primary-500 text-white'
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                APK Builder
-              </button>
-            </nav>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-hidden">
-          {activeView === 'editor' && (
-            <div className="h-full flex flex-col sm:flex-row">
-              <div className="flex-1 flex flex-col overflow-hidden">
-                {state.currentProject?.type === 'single' ? (
-                  <div className="flex-1">
-                    <CodeEditor content={htmlContent} onChange={setHtmlContent} language="html" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex-1 border-b border-dark-700">
-                      <div className="flex items-center justify-between px-3 py-2 bg-dark-700">
-                        <span className="text-gray-400 text-xs font-medium">index.html</span>
-                      </div>
-                      <CodeEditor content={htmlContent} onChange={setHtmlContent} language="html" />
-                    </div>
-                    <div className="flex-1 border-b border-dark-700">
-                      <div className="flex items-center justify-between px-3 py-2 bg-dark-700">
-                        <span className="text-gray-400 text-xs font-medium">style.css</span>
-                      </div>
-                      <CodeEditor content={cssContent} onChange={setCssContent} language="css" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between px-3 py-2 bg-dark-700">
-                        <span className="text-gray-400 text-xs font-medium">script.js</span>
-                      </div>
-                      <CodeEditor content={jsContent} onChange={setJsContent} language="javascript" />
-                    </div>
-                  </>
+      {/* 主内容区 */}
+      <div className="flex-1 overflow-hidden relative">
+        {activeTab === 'editor' && (
+          <div className="h-full">
+            {state.currentProject?.type === 'single' ? (
+              <CodeEditor content={htmlContent} onChange={setHtmlContent} language="html" />
+            ) : (
+              <div className="h-full">
+                {activeFile === 'html' && (
+                  <CodeEditor content={htmlContent} onChange={setHtmlContent} language="html" />
+                )}
+                {activeFile === 'css' && (
+                  <CodeEditor content={cssContent} onChange={setCssContent} language="css" />
+                )}
+                {activeFile === 'js' && (
+                  <CodeEditor content={jsContent} onChange={setJsContent} language="javascript" />
                 )}
               </div>
+            )}
+          </div>
+        )}
 
-              <div className="sm:hidden">
-                <div className="flex items-center justify-between px-3 py-2 bg-dark-700 border-b border-dark-600">
-                  <button
-                    onClick={() => setMobilePreviewMode('editor')}
-                    className={`flex-1 py-2 text-sm font-medium rounded transition-colors ${
-                      mobilePreviewMode === 'editor'
-                        ? 'bg-dark-600 text-white'
-                        : 'text-gray-400'
-                    }`}
-                  >
-                    Editor
-                  </button>
-                  <button
-                    onClick={() => setMobilePreviewMode('preview')}
-                    className={`flex-1 py-2 text-sm font-medium rounded transition-colors ${
-                      mobilePreviewMode === 'preview'
-                        ? 'bg-dark-600 text-white'
-                        : 'text-gray-400'
-                    }`}
-                  >
-                    Preview
-                  </button>
-                </div>
-              </div>
+        {activeTab === 'preview' && (
+          <PreviewPanel html={htmlContent} css={cssContent} js={jsContent} />
+        )}
 
-              <div className={`hidden sm:block sm:w-1/2 ${mobilePreviewMode === 'preview' ? 'sm:hidden' : ''}`}>
-                <PreviewPanel html={htmlContent} css={cssContent} js={jsContent} />
-              </div>
+        {activeTab === 'ai' && (
+          <AIAssistant onCodeGenerated={handleCodeGenerated} currentCode={htmlContent} />
+        )}
+
+        {activeTab === 'builder' && (
+          <APKBuilder />
+        )}
+
+        {/* 空状态 */}
+        {!state.currentProject && activeTab === 'editor' && (
+          <div className="h-full flex flex-col items-center justify-center text-center px-8">
+            <div className="text-5xl mb-4">🐦</div>
+            <h2 className="text-white text-lg font-bold mb-2">欢迎使用织雀</h2>
+            <p className="text-slate-400 text-sm mb-6">移动端代码编辑器，随时随地编程</p>
+            <button
+              onClick={() => setShowProjects(true)}
+              className="px-6 py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors"
+            >
+              创建新项目
+            </button>
+          </div>
+        )}
+
+        {!state.currentProject && activeTab === 'preview' && (
+          <div className="h-full flex flex-col items-center justify-center text-center px-8">
+            <div className="text-5xl mb-4">👁</div>
+            <p className="text-slate-400 text-sm">请先选择一个项目</p>
+          </div>
+        )}
+      </div>
+
+      {/* 底部导航 */}
+      <nav
+        className="flex items-center justify-around bg-slate-900 border-t border-slate-800 flex-shrink-0"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex flex-col items-center gap-0.5 py-2 px-3 transition-all ${
+              activeTab === tab.key
+                ? 'text-cyan-400'
+                : 'text-slate-500 active:text-slate-300'
+            }`}
+          >
+            <span className="text-lg leading-none">{tab.icon}</span>
+            <span className="text-[10px] font-medium">{tab.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* 项目列表抽屉 */}
+      {showProjects && (
+        <div className="fixed inset-0 z-50 flex flex-col">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowProjects(false)}
+          />
+          <div className="relative h-[85%] mt-auto bg-slate-900 rounded-t-2xl overflow-hidden animate-slide-up">
+            <div className="flex items-center justify-center py-2">
+              <div className="w-10 h-1 bg-slate-600 rounded-full" />
             </div>
-          )}
-
-          {activeView === 'editor' && mobilePreviewMode === 'preview' && (
-            <div className="sm:hidden h-full">
-              <PreviewPanel html={htmlContent} css={cssContent} js={jsContent} />
-            </div>
-          )}
-
-          {activeView === 'ai' && (
-            <div className="h-full">
-              <AIAssistant onCodeGenerated={handleCodeGenerated} currentCode={htmlContent} />
-            </div>
-          )}
-
-          {activeView === 'builder' && (
-            <div className="h-full">
-              <APKBuilder />
-            </div>
-          )}
+            <ProjectList
+              projects={projects}
+              onSelectProject={handleSelectProject}
+              onClose={() => setShowProjects(false)}
+            />
+          </div>
         </div>
-      </main>
-
-      <BottomNav activeView={activeView} onViewChange={setActiveView} />
-
-      <div className="sm:hidden h-14" />
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { aiService } from '../services/aiService';
 import { AIProvider } from '@/common/types';
 
@@ -21,6 +21,13 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
   const [apiKey, setApiKey] = useState('');
   const [apiUrl, setApiUrl] = useState('https://api.openai.com/v1');
   const [model, setModel] = useState('gpt-3.5-turbo');
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isGenerating]);
 
   const handleGenerateCode = async () => {
     if (!prompt.trim()) return;
@@ -35,7 +42,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` },
+        { role: 'assistant', content: `错误：${error instanceof Error ? error.message : '未知错误'}` },
       ]);
     } finally {
       setIsGenerating(false);
@@ -47,7 +54,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     if (!prompt.trim() || !currentCode) return;
 
     setIsGenerating(true);
-    setMessages((prev) => [...prev, { role: 'user', content: `Code:\n${currentCode}\n\nError:\n${prompt}` }]);
+    setMessages((prev) => [...prev, { role: 'user', content: `代码：\n${currentCode}\n\n错误：${prompt}` }]);
 
     try {
       const response = await aiService.debugCode(currentCode, prompt);
@@ -55,7 +62,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` },
+        { role: 'assistant', content: `错误：${error instanceof Error ? error.message : '未知错误'}` },
       ]);
     } finally {
       setIsGenerating(false);
@@ -75,7 +82,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` },
+        { role: 'assistant', content: `错误：${error instanceof Error ? error.message : '未知错误'}` },
       ]);
     } finally {
       setIsGenerating(false);
@@ -101,7 +108,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     if (apiKey.trim()) {
       const provider: AIProvider = {
         id: 'custom',
-        name: 'Custom API',
+        name: '自定义API',
         baseURL: apiUrl.trim(),
         apiKey: apiKey.trim(),
         model: model.trim(),
@@ -112,159 +119,147 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     }
   };
 
+  const tabs = [
+    { key: 'generate' as const, label: '生成代码' },
+    { key: 'debug' as const, label: '调试' },
+    { key: 'chat' as const, label: '对话' },
+  ];
+
+  const placeholders = {
+    generate: '描述你想生成的代码...',
+    debug: '描述遇到的错误...',
+    chat: '问一个关于网页开发的问题...',
+  };
+
   return (
-    <div className="flex flex-col h-full bg-dark-900">
-      <div className="flex items-center justify-between border-b border-dark-700">
-        <div className="flex">
+    <div className="flex flex-col h-full bg-slate-950">
+      {/* 标签栏 */}
+      <div className="flex items-center border-b border-slate-800 flex-shrink-0">
+        {tabs.map((tab) => (
           <button
-            onClick={() => setActiveTab('generate')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'generate'
-                ? 'bg-primary-500 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-dark-700'
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex-1 py-2.5 text-xs font-medium transition-colors relative ${
+              activeTab === tab.key
+                ? 'text-cyan-400'
+                : 'text-slate-500'
             }`}
           >
-            Code Gen
+            {tab.label}
+            {activeTab === tab.key && (
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
+            )}
           </button>
-          <button
-            onClick={() => setActiveTab('debug')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'debug'
-                ? 'bg-primary-500 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-dark-700'
-            }`}
-          >
-            Debug
-          </button>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'chat'
-                ? 'bg-primary-500 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-dark-700'
-            }`}
-          >
-            Chat
-          </button>
-        </div>
+        ))}
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="p-3 text-gray-400 hover:text-white transition-colors"
-          title="API Settings"
+          className="px-3 text-slate-500 active:text-slate-300 transition-colors"
         >
           ⚙️
         </button>
       </div>
 
+      {/* 设置面板 */}
       {showSettings && (
-        <div className="p-4 bg-dark-800 border-b border-dark-700">
-          <h3 className="text-white font-semibold mb-3">API Settings</h3>
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="API URL (e.g., https://api.openai.com/v1)"
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              className="w-full px-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary-500"
-            />
-            <input
-              type="text"
-              placeholder="API Key"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              className="w-full px-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary-500"
-            />
-            <input
-              type="text"
-              placeholder="Model (e.g., gpt-3.5-turbo)"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="w-full px-3 py-2 bg-dark-900 border border-dark-600 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:border-primary-500"
-            />
-            <button
-              onClick={handleSaveSettings}
-              className="w-full px-4 py-2 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors"
-            >
-              Save Settings
-            </button>
-          </div>
+        <div className="p-4 bg-slate-900 border-b border-slate-800 space-y-3">
+          <h3 className="text-white font-medium text-sm">API 设置</h3>
+          <input
+            type="text"
+            placeholder="API 地址"
+            value={apiUrl}
+            onChange={(e) => setApiUrl(e.target.value)}
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-500"
+          />
+          <input
+            type="text"
+            placeholder="API Key"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-500"
+          />
+          <input
+            type="text"
+            placeholder="模型名称"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-white placeholder-slate-500 text-xs focus:outline-none focus:border-cyan-500"
+          />
+          <button
+            onClick={handleSaveSettings}
+            className="w-full py-2 bg-cyan-500 text-white text-sm font-medium rounded-lg active:bg-cyan-600 transition-colors"
+          >
+            保存设置
+          </button>
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* 消息列表 */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500 py-10">
-            <p className="text-lg">{activeTab === 'generate' && 'Describe what code you want to generate...'}</p>
-            <p className="text-lg">{activeTab === 'debug' && 'Describe the error you are encountering...'}</p>
-            <p className="text-lg">{activeTab === 'chat' && 'Ask a question about web development...'}</p>
-            <p className="text-sm mt-2 text-gray-600">Configure API settings in the top right corner</p>
+          <div className="text-center text-slate-500 py-12">
+            <div className="text-4xl mb-3">🤖</div>
+            <p className="text-sm">{placeholders[activeTab]}</p>
+            <p className="text-xs mt-2 text-slate-600">点击右上角⚙️配置API</p>
           </div>
         ) : (
           messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+              className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
             >
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${
-                  msg.role === 'user' ? 'bg-primary-500' : 'bg-dark-600'
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                  msg.role === 'user' ? 'bg-cyan-500' : 'bg-slate-700'
                 }`}
               >
-                {msg.role === 'user' ? 'U' : 'AI'}
+                {msg.role === 'user' ? '我' : 'AI'}
               </div>
               <div
-                className={`max-w-[80%] p-3 rounded-lg ${
+                className={`max-w-[78%] px-3 py-2 rounded-2xl text-sm ${
                   msg.role === 'user'
-                    ? 'bg-primary-500 text-white rounded-br-none'
-                    : 'bg-dark-700 text-gray-200 rounded-bl-none'
+                    ? 'bg-cyan-500 text-white rounded-tr-md'
+                    : 'bg-slate-800 text-slate-200 rounded-tl-md'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap break-all">{msg.content}</p>
+                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
               </div>
             </div>
           ))
         )}
         {isGenerating && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-dark-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+          <div className="flex gap-2">
+            <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
               AI
             </div>
-            <div className="bg-dark-700 px-4 py-3 rounded-lg rounded-bl-none">
+            <div className="bg-slate-800 px-4 py-3 rounded-2xl rounded-tl-md">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-3 border-t border-dark-700">
-        <div className="flex gap-3">
-          <input
-            type="text"
-            placeholder={
-              activeTab === 'generate'
-                ? 'Enter code generation prompt...'
-                : activeTab === 'debug'
-                ? 'Enter error description...'
-                : 'Enter your question...'
-            }
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            className="flex-1 px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-primary-500 transition-colors"
-            disabled={isGenerating}
-          />
-          <button
-            onClick={handleSend}
-            disabled={isGenerating || !prompt.trim()}
-            className="px-6 py-3 bg-primary-500 text-white font-semibold rounded-xl hover:bg-primary-600 disabled:bg-dark-600 disabled:cursor-not-allowed transition-colors"
-          >
-            {isGenerating ? '...' : 'Send'}
-          </button>
-        </div>
+      {/* 输入栏 */}
+      <div className="p-2.5 border-t border-slate-800 flex gap-2">
+        <input
+          type="text"
+          placeholder={placeholders[activeTab]}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+          className="flex-1 px-3 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-cyan-500 transition-colors"
+          disabled={isGenerating}
+        />
+        <button
+          onClick={handleSend}
+          disabled={isGenerating || !prompt.trim()}
+          className="px-4 py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 disabled:bg-slate-800 disabled:text-slate-600 transition-colors"
+        >
+          发送
+        </button>
       </div>
     </div>
   );

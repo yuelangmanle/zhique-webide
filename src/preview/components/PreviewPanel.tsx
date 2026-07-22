@@ -10,7 +10,7 @@ interface PreviewPanelProps {
 export const PreviewPanel = ({ html, css, js }: PreviewPanelProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [consoleMessages, setConsoleMessages] = useState<ConsoleMessage[]>([]);
-  const [showConsole, setShowConsole] = useState(true);
+  const [showConsole, setShowConsole] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -41,37 +41,50 @@ export const PreviewPanel = ({ html, css, js }: PreviewPanelProps) => {
       case 'info':
         return 'text-blue-400';
       default:
-        return 'text-gray-300';
+        return 'text-slate-300';
+    }
+  };
+
+  const getMessageLabel = (type: string): string => {
+    switch (type) {
+      case 'error':
+        return '错误';
+      case 'warn':
+        return '警告';
+      case 'info':
+        return '信息';
+      default:
+        return '日志';
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-dark-800">
-      <div className="flex items-center justify-between px-3 py-2 bg-dark-700 border-b border-dark-600">
-        <span className="text-white font-semibold text-sm">Preview</span>
+    <div className="flex flex-col h-full bg-slate-950">
+      <div className="flex items-center justify-between px-3 py-2 bg-slate-900 border-b border-slate-800 flex-shrink-0">
+        <span className="text-slate-300 font-medium text-sm">预览</span>
         <button
           onClick={() => setShowConsole(!showConsole)}
-          className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+          className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
             showConsole
-              ? 'bg-primary-500 text-white'
-              : 'bg-dark-600 text-gray-400 hover:bg-dark-500'
+              ? 'bg-cyan-500 text-white'
+              : 'bg-slate-800 text-slate-400'
           }`}
         >
-          Console {showConsole ? '▼' : '▲'}
+          控制台 {consoleMessages.length > 0 && `(${consoleMessages.length})`}
         </button>
       </div>
 
       <div ref={containerRef} className="flex-1 bg-white" />
 
       {showConsole && (
-        <div className="h-40 sm:h-48 overflow-y-auto border-t border-dark-600 p-3 font-mono text-xs">
-          <div className="text-gray-400 font-semibold mb-2">Console Output</div>
+        <div className="h-32 overflow-y-auto border-t border-slate-800 p-3 font-mono text-xs bg-slate-950">
+          <div className="text-slate-500 font-semibold mb-2">控制台输出</div>
           {consoleMessages.length === 0 ? (
-            <div className="text-gray-500">No console output yet...</div>
+            <div className="text-slate-600">暂无输出...</div>
           ) : (
             consoleMessages.map((msg, index) => (
               <div key={index} className={`flex items-start gap-2 mb-1 ${getMessageColor(msg.type)}`}>
-                <span className="text-gray-500 flex-shrink-0">[{msg.type}]</span>
+                <span className="text-slate-600 flex-shrink-0">[{getMessageLabel(msg.type)}]</span>
                 <span className="break-all">{msg.message}</span>
               </div>
             ))
