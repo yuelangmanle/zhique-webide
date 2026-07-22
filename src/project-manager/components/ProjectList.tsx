@@ -84,7 +84,12 @@ export const ProjectList = ({ projects, onSelectProject }: ProjectListProps) => 
       </div>
 
       {showCreateDialog && (
-        <div className="fixed inset-0 bg-black/70 flex items-end justify-center z-[60] animate-fade-in">
+        <div
+          className="fixed inset-0 bg-black/70 flex items-end justify-center z-[100] animate-fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCreateDialog(false);
+          }}
+        >
           <div className="bg-slate-800 p-5 rounded-t-2xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-center mb-4">
               <div className="w-10 h-1 bg-slate-600 rounded-full" />

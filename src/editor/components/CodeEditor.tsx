@@ -58,8 +58,9 @@ export const CodeEditor = ({ content, onChange, language = 'html' }: CodeEditorP
           }
         }),
         EditorView.theme({
-          '&': { height: '100%' },
+          '&': { height: '100%', maxHeight: '100%' },
           '.cm-scroller': { overflow: 'auto' },
+          '.cm-gutters': { borderRight: '1px solid #334155' },
         }),
       ],
     });
@@ -71,8 +72,16 @@ export const CodeEditor = ({ content, onChange, language = 'html' }: CodeEditorP
 
     viewRef.current = view;
 
+    // 延迟请求测量刷新，确保在容器可见后正确计算
+    requestAnimationFrame(() => {
+      if (viewRef.current) {
+        viewRef.current.requestMeasure();
+      }
+    });
+
     return () => {
       view.destroy();
+      viewRef.current = null;
     };
   }, [language]);
 

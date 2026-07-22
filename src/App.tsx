@@ -142,9 +142,9 @@ function App() {
 
       {/* 主内容区 */}
       <div className="flex-1 overflow-hidden relative">
-        {activeTab === 'editor' && (
+        {activeTab === 'editor' && state.currentProject && (
           <div className="h-full">
-            {state.currentProject?.type === 'single' ? (
+            {state.currentProject.type === 'single' ? (
               <CodeEditor content={htmlContent} onChange={setHtmlContent} language="html" />
             ) : (
               <div className="h-full">
@@ -162,7 +162,7 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'preview' && (
+        {activeTab === 'preview' && state.currentProject && (
           <PreviewPanel html={htmlContent} css={cssContent} js={jsContent} />
         )}
 
@@ -174,25 +174,24 @@ function App() {
           <APKBuilder />
         )}
 
-        {/* 空状态 */}
-        {!state.currentProject && activeTab === 'editor' && (
+        {/* 空状态 - 没有项目时 */}
+        {!state.currentProject && (activeTab === 'editor' || activeTab === 'preview') && (
           <div className="h-full flex flex-col items-center justify-center text-center px-8">
-            <div className="text-5xl mb-4">🐦</div>
-            <h2 className="text-white text-lg font-bold mb-2">欢迎使用织雀</h2>
-            <p className="text-slate-400 text-sm mb-6">移动端代码编辑器，随时随地编程</p>
-            <button
-              onClick={() => setShowProjects(true)}
-              className="px-6 py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors"
-            >
-              创建新项目
-            </button>
-          </div>
-        )}
-
-        {!state.currentProject && activeTab === 'preview' && (
-          <div className="h-full flex flex-col items-center justify-center text-center px-8">
-            <div className="text-5xl mb-4">👁</div>
-            <p className="text-slate-400 text-sm">请先选择一个项目</p>
+            <div className="text-6xl mb-5">{activeTab === 'preview' ? '👁' : '🐦'}</div>
+            {activeTab === 'editor' ? (
+              <>
+                <h2 className="text-white text-xl font-bold mb-2">欢迎使用织雀</h2>
+                <p className="text-slate-400 text-sm mb-6">移动端代码编辑器，随时随地编程</p>
+                <button
+                  onClick={() => setShowProjects(true)}
+                  className="px-6 py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors"
+                >
+                  创建新项目
+                </button>
+              </>
+            ) : (
+              <p className="text-slate-400 text-sm">请先选择一个项目</p>
+            )}
           </div>
         )}
       </div>

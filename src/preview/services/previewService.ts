@@ -1,7 +1,3 @@
-import { Camera, CameraResultType } from '@capacitor/camera';
-import { Geolocation } from '@capacitor/geolocation';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-
 interface ConsoleMessage {
   type: string;
   message: string;
@@ -25,12 +21,13 @@ class WebViewPreviewService implements PreviewService {
     this.iframe.style.width = '100%';
     this.iframe.style.height = '100%';
     this.iframe.style.border = 'none';
+    this.iframe.className = 'iframe-preview';
     container.appendChild(this.iframe);
 
     window.addEventListener('message', this.handleMessage.bind(this));
   }
 
-  private async handleMessage(event: MessageEvent): Promise<void> {
+  private handleMessage(event: MessageEvent): void {
     if (event.data?.type === 'console') {
       const message: ConsoleMessage = {
         type: event.data.level || 'log',
@@ -38,84 +35,6 @@ class WebViewPreviewService implements PreviewService {
       };
       this.consoleMessages.push(message);
       this.consoleCallbacks.forEach((callback) => callback(message));
-    }
-
-    if (event.data?.type === 'capacitor-request') {
-      try {
-        const response = await this.handleCapacitorRequest(event.data);
-        this.sendMessageToIframe({
-          type: 'capacitor-response',
-          id: event.data.id,
-          success: true,
-          data: response,
-        });
-      } catch (error) {
-        this.sendMessageToIframe({
-          type: 'capacitor-response',
-          id: event.data.id,
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    }
-  }
-
-  private async handleCapacitorRequest(data: { method: string; params?: Record<string, unknown> }): Promise<unknown> {
-    switch (data.method) {
-      case 'camera.getPhoto':
-        const cameraResult = await Camera.getPhoto({
-          quality: data.params?.quality as number || 90,
-          resultType: CameraResultType.Base64,
-        });
-        return {
-          base64Data: cameraResult.base64String,
-          format: cameraResult.format,
-          webPath: cameraResult.webPath,
-        };
-
-      case 'geolocation.getCurrentPosition':
-        const geoResult = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: data.params?.enableHighAccuracy as boolean || true,
-        });
-        return {
-          latitude: geoResult.coords.latitude,
-          longitude: geoResult.coords.longitude,
-          accuracy: geoResult.coords.accuracy,
-          altitude: geoResult.coords.altitude,
-          speed: geoResult.coords.speed,
-        };
-
-      case 'filesystem.readFile':
-        const readResult = await Filesystem.readFile({
-          path: data.params?.path as string,
-          directory: (data.params?.directory as string) as Directory || Directory.Data,
-        });
-        return { data: readResult.data };
-
-      case 'filesystem.writeFile':
-        await Filesystem.writeFile({
-          path: data.params?.path as string,
-          data: data.params?.data as string,
-          directory: (data.params?.directory as string) as Directory || Directory.Data,
-        });
-        return { success: true };
-
-      case 'filesystem.mkdir':
-        await Filesystem.mkdir({
-          path: data.params?.path as string,
-          directory: (data.params?.directory as string) as Directory || Directory.Data,
-          recursive: data.params?.recursive as boolean || true,
-        });
-        return { success: true };
-
-      default:
-        throw new Error(`Unknown method: ${data.method}`);
-    }
-  }
-
-  private sendMessageToIframe(data: unknown): void {
-    if (this.iframe && this.iframe.contentWindow) {
-      this.iframe.contentWindow.postMessage(data, '*');
     }
   }
 
@@ -137,76 +56,47 @@ class WebViewPreviewService implements PreviewService {
           const originalError = console.error;
           const originalWarn = console.warn;
           const originalInfo = console.info;
-          
+
+          function formatArgs(args) {
+            return args.map(a => {
+              if (typeof a === 'object') {
+                try { return JSON.stringify(a); } catch { return String(a); }
+              }
+              return String(a);
+            }).join(' ');
+          }
+
           console.log = (...args) => {
             originalLog.apply(console, args);
-            window.parent.postMessage({ type: 'console', level: 'log', message: JSON.stringify(args) }, '*');
-          };
-          
-          console.error = (...args) => {
-            originalError.apply(console, args);
-            window.parent.postMessage({ type: 'console', level: 'error', message: JSON.stringify(args) }, '*');
-          };
-          
-          console.warn = (...args) => {
-            originalWarn.apply(console, args);
-            window.parent.postMessage({ type: 'console', level: 'warn', message: JSON.stringify(args) }, '*');
-          };
-          
-          console.info = (...args) => {
-            originalInfo.apply(console, args);
-            window.parent.postMessage({ type: 'console', level: 'info', message: JSON.stringify(args) }, '*');
+            window.parent.postMessage({ type: 'console', level: 'log', message: formatArgs(args) }, '*');
           };
 
-          window.Capacitor = {
-            Plugin: {
-              create: () => ({
-                call: (method, params) => new Promise((resolve, reject) => {
-                  const id = Date.now() + Math.random();
-                  const handler = (event) => {
-                    if (event.data?.type === 'capacitor-response' && event.data?.id === id) {
-                      window.removeEventListener('message', handler);
-                      if (event.data.success) {
-                        resolve(event.data.data);
-                      } else {
-                        reject(new Error(event.data.error));
-                      }
-                    }
-                  };
-                  window.addEventListener('message', handler);
-                  window.parent.postMessage({ type: 'capacitor-request', id, method, params }, '*');
-                })
-              })
-            },
-            Camera: {
-              getPhoto: (options) => {
-                const plugin = window.Capacitor.Plugin.create();
-                return plugin.call('camera.getPhoto', options);
-              }
-            },
-            Geolocation: {
-              getCurrentPosition: (options) => {
-                const plugin = window.Capacitor.Plugin.create();
-                return plugin.call('geolocation.getCurrentPosition', options);
-              }
-            },
-            Filesystem: {
-              readFile: (options) => {
-                const plugin = window.Capacitor.Plugin.create();
-                return plugin.call('filesystem.readFile', options);
-              },
-              writeFile: (options) => {
-                const plugin = window.Capacitor.Plugin.create();
-                return plugin.call('filesystem.writeFile', options);
-              },
-              mkdir: (options) => {
-                const plugin = window.Capacitor.Plugin.create();
-                return plugin.call('filesystem.mkdir', options);
-              }
-            }
+          console.error = (...args) => {
+            originalError.apply(console, args);
+            window.parent.postMessage({ type: 'console', level: 'error', message: formatArgs(args) }, '*');
           };
+
+          console.warn = (...args) => {
+            originalWarn.apply(console, args);
+            window.parent.postMessage({ type: 'console', level: 'warn', message: formatArgs(args) }, '*');
+          };
+
+          console.info = (...args) => {
+            originalInfo.apply(console, args);
+            window.parent.postMessage({ type: 'console', level: 'info', message: formatArgs(args) }, '*');
+          };
+
+          window.addEventListener('error', (e) => {
+            window.parent.postMessage({ type: 'console', level: 'error', message: e.message + ' (' + e.filename + ':' + e.lineno + ')' }, '*');
+          });
         <\/script>
-        <script>${js}<\/script>
+        <script>
+          try {
+            ${js}
+          } catch(e) {
+            console.error(e.message);
+          }
+        <\/script>
       </body>
       </html>
     `;

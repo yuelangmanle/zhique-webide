@@ -1,4 +1,3 @@
-import { Permissions, type Permission as CapacitorPermission } from '@capawesome/capacitor-permissions';
 import { Permission, PermissionState } from '@/common/types';
 
 class PermissionService {
@@ -61,70 +60,62 @@ class PermissionService {
     },
   ];
 
-  private getCapacitorPermissionName(name: string): CapacitorPermission | undefined {
-    const mapping: Record<string, string> = {
-      camera: 'CAMERA',
-      photos: 'PHOTOS',
-      location: 'LOCATION',
-      bluetooth: 'BLUETOOTH',
-      microphone: 'MICROPHONE',
-      notification: 'NOTIFICATIONS',
-    };
-    return mapping[name] as CapacitorPermission | undefined;
-  }
+  private webPermissionMap: Record<string, string> = {
+    camera: 'camera',
+    microphone: 'microphone',
+    location: 'geolocation',
+    notification: 'notifications',
+  };
 
   getAvailablePermissions(): Permission[] {
     return this.permissions;
   }
 
   async checkPermission(name: string): Promise<PermissionState> {
-    const permission = this.permissions.find((p) => p.name === name);
-    if (!permission) throw new Error('Permission not found');
-
-    const capPermission = this.getCapacitorPermissionName(name);
-    if (!capPermission) {
-      return {
-        name,
-        granted: false,
-        prompt: false,
-      };
+    const webName = this.webPermissionMap[name];
+    if (!webName || !navigator.permissions) {
+      return { name, granted: false, prompt: true };
     }
 
-    const result = await Permissions.check({
-      permissions: [capPermission],
-    });
-
-    const status = result.statuses[0];
-    return {
-      name,
-      granted: status?.state === 'granted',
-      prompt: status?.state === 'prompt',
-    };
+    try {
+      const result = await navigator.permissions.query({
+        name: webName as PermissionName,
+      });
+      return {
+        name,
+        granted: result.state === 'granted',
+        prompt: result.state === 'prompt',
+      };
+    } catch {
+      return { name, granted: false, prompt: true };
+    }
   }
 
   async requestPermission(name: string): Promise<PermissionState> {
-    const permission = this.permissions.find((p) => p.name === name);
-    if (!permission) throw new Error('Permission not found');
-
-    const capPermission = this.getCapacitorPermissionName(name);
-    if (!capPermission) {
-      return {
-        name,
-        granted: false,
-        prompt: false,
-      };
+    try {
+      if (name === 'camera' || name === 'microphone') {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          [name === 'camera' ? 'video' : 'audio']: true,
+        });
+        stream.getTracks().forEach((t) => t.stop());
+        return { name, granted: true, prompt: false };
+      }
+      if (name === 'location') {
+        await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        });
+        return { name, granted: true, prompt: false };
+      }
+      if (name === 'notification') {
+        if ('Notification' in window) {
+          const result = await Notification.requestPermission();
+          return { name, granted: result === 'granted', prompt: result === 'default' };
+        }
+      }
+    } catch {
+      // 请求被拒绝
     }
-
-    const result = await Permissions.request({
-      permissions: [capPermission],
-    });
-
-    const status = result.statuses[0];
-    return {
-      name,
-      granted: status?.state === 'granted',
-      prompt: status?.state === 'prompt',
-    };
+    return { name, granted: false, prompt: false };
   }
 
   async checkAllPermissions(): Promise<Record<string, PermissionState>> {

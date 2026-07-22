@@ -1,20 +1,70 @@
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Project, ProjectFile } from '@/common/types';
 import { generateId } from '@/common/utils';
 
+const DB_NAME = 'zhique-ide';
+const DB_VERSION = 1;
+const FILE_STORE = 'files';
+const PROJECTS_KEY = 'zhique-projects';
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(FILE_STORE)) {
+        db.createObjectStore(FILE_STORE);
+      }
+    };
+  });
+}
+
+async function idbGet(key: string): Promise<string | null> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_STORE, 'readonly');
+    const req = tx.objectStore(FILE_STORE).get(key);
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => resolve(req.result ?? null);
+  });
+}
+
+async function idbSet(key: string, value: string): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_STORE, 'readwrite');
+    tx.objectStore(FILE_STORE).put(value, key);
+    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => resolve();
+  });
+}
+
+async function idbClearPrefix(prefix: string): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FILE_STORE, 'readwrite');
+    const store = tx.objectStore(FILE_STORE);
+    const req = store.getAllKeys();
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const keys = req.result as string[];
+      keys.forEach((k) => {
+        if (k.startsWith(prefix)) store.delete(k);
+      });
+    };
+    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => resolve();
+  });
+}
+
 class ProjectService {
   private projects: Project[] = [];
-  private readonly STORAGE_KEY = 'projects.json';
-  private readonly PROJECTS_DIR = 'projects';
 
   async loadProjects(): Promise<Project[]> {
     try {
-      const result = await Filesystem.readFile({
-        path: this.STORAGE_KEY,
-        directory: Directory.Data,
-        encoding: Encoding.UTF8,
-      });
-      this.projects = JSON.parse(result.data as string);
+      const raw = localStorage.getItem(PROJECTS_KEY);
+      this.projects = raw ? JSON.parse(raw) : [];
     } catch {
       this.projects = [];
     }
@@ -22,52 +72,37 @@ class ProjectService {
   }
 
   async saveProjects(): Promise<void> {
-    await Filesystem.writeFile({
-      path: this.STORAGE_KEY,
-      data: JSON.stringify(this.projects),
-      directory: Directory.Data,
-    });
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(this.projects));
   }
 
   async createProject(name: string, type: 'single' | 'folder'): Promise<Project> {
     const id = generateId();
-    const path = `${this.PROJECTS_DIR}/${id}`;
-
-    await Filesystem.mkdir({
-      path,
-      directory: Directory.Data,
-      recursive: true,
-    });
 
     if (type === 'single') {
-      await Filesystem.writeFile({
-        path: `${path}/index.html`,
-        data: '<!DOCTYPE html>\n<html>\n<head>\n  <title>My App</title>\n  <style>\n    body { font-family: sans-serif; }\n  </style>\n</head>\n<body>\n  <h1>Hello World!</h1>\n  <script>\n    console.log("Welcome to Mobile Web IDE");\n  </script>\n</body>\n</html>',
-        directory: Directory.Data,
-      });
+      await idbSet(
+        `${id}/index.html`,
+        '<!DOCTYPE html>\n<html>\n<head>\n  <title>我的应用</title>\n  <style>\n    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f0f0f0; }\n    h1 { color: #333; }\n  </style>\n</head>\n<body>\n  <h1>Hello World!</h1>\n  <script>\n    console.log("欢迎使用织雀IDE");\n  </script>\n</body>\n</html>',
+      );
     } else {
-      await Filesystem.writeFile({
-        path: `${path}/index.html`,
-        data: '<!DOCTYPE html>\n<html>\n<head>\n  <title>My App</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <h1>Hello World!</h1>\n  <script src="script.js"></script>\n</body>\n</html>',
-        directory: Directory.Data,
-      });
-      await Filesystem.writeFile({
-        path: `${path}/style.css`,
-        data: 'body {\n  font-family: sans-serif;\n  margin: 20px;\n}\n\nh1 {\n  color: #333;\n}',
-        directory: Directory.Data,
-      });
-      await Filesystem.writeFile({
-        path: `${path}/script.js`,
-        data: 'console.log("Welcome to Mobile Web IDE");\n\nalert("Hello from JavaScript!");',
-        directory: Directory.Data,
-      });
+      await idbSet(
+        `${id}/index.html`,
+        '<!DOCTYPE html>\n<html>\n<head>\n  <title>我的应用</title>\n  <link rel="stylesheet" href="style.css">\n</head>\n<body>\n  <h1>Hello World!</h1>\n  <script src="script.js"></script>\n</body>\n</html>',
+      );
+      await idbSet(
+        `${id}/style.css`,
+        'body {\n  font-family: sans-serif;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  min-height: 100vh;\n  margin: 0;\n  background: #f0f0f0;\n}\n\nh1 {\n  color: #333;\n}',
+      );
+      await idbSet(
+        `${id}/script.js`,
+        'console.log("欢迎使用织雀IDE");',
+      );
     }
 
     const project: Project = {
       id,
       name,
       type,
-      path,
+      path: id,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -79,64 +114,41 @@ class ProjectService {
   }
 
   async deleteProject(id: string): Promise<void> {
-    const project = this.projects.find((p) => p.id === id);
-    if (!project) throw new Error('Project not found');
-
-    await Filesystem.rmdir({
-      path: project.path,
-      directory: Directory.Data,
-      recursive: true,
-    });
-
+    await idbClearPrefix(`${id}/`);
     this.projects = this.projects.filter((p) => p.id !== id);
     await this.saveProjects();
   }
 
   async readFile(projectId: string, filePath: string): Promise<string> {
-    const project = this.projects.find((p) => p.id === projectId);
-    if (!project) throw new Error('Project not found');
-
-    const result = await Filesystem.readFile({
-      path: `${project.path}/${filePath}`,
-      directory: Directory.Data,
-      encoding: Encoding.UTF8,
-    });
-
-    return result.data as string;
+    return (await idbGet(`${projectId}/${filePath}`)) ?? '';
   }
 
   async writeFile(projectId: string, filePath: string, content: string): Promise<void> {
+    await idbSet(`${projectId}/${filePath}`, content);
     const project = this.projects.find((p) => p.id === projectId);
-    if (!project) throw new Error('Project not found');
-
-    await Filesystem.writeFile({
-      path: `${project.path}/${filePath}`,
-      data: content,
-      directory: Directory.Data,
-    });
-
-    project.updatedAt = new Date();
-    await this.saveProjects();
+    if (project) {
+      project.updatedAt = new Date();
+      await this.saveProjects();
+    }
   }
 
   async listFiles(projectId: string): Promise<ProjectFile[]> {
-    const project = this.projects.find((p) => p.id === projectId);
-    if (!project) throw new Error('Project not found');
-
-    try {
-      const result = await Filesystem.readdir({
-        path: project.path,
-        directory: Directory.Data,
-      });
-
-      return result.files.map((file) => ({
-        name: file.name,
-        path: file.uri,
-        type: file.type === 'directory' ? 'folder' : 'file',
-      }));
-    } catch {
-      return [];
-    }
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(FILE_STORE, 'readonly');
+      const req = tx.objectStore(FILE_STORE).getAllKeys();
+      req.onerror = () => reject(req.error);
+      req.onsuccess = () => {
+        const prefix = `${projectId}/`;
+        const files = (req.result as string[])
+          .filter((k) => k.startsWith(prefix))
+          .map((k) => {
+            const name = k.slice(prefix.length);
+            return { name, path: k, type: 'file' as const };
+          });
+        resolve(files);
+      };
+    });
   }
 
   getProjectById(id: string): Project | undefined {
