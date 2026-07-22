@@ -19,7 +19,7 @@
       "@/*": ["./src/*"],
       "*": ["./*"]
     },
-    "types": ["node", "jest"]
+    "types": []
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
