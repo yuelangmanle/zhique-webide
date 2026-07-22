@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { previewService, type ConsoleMessage } from '../services/previewService';
-import { IconEye, IconChevronUp, IconChevronDown } from '@/common/components/Icons';
+import { IconEye, IconChevronUp, IconChevronDown, IconHelp } from '@/common/components/Icons';
 
 interface PreviewPanelProps {
   html: string;
@@ -94,11 +94,7 @@ export const PreviewPanel = ({ html, css, js }: PreviewPanelProps) => {
             aria-label="帮助"
             className="w-11 h-11 flex items-center justify-center text-slate-500 active:text-cyan-400 transition-colors rounded-lg"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-              <line x1="12" y1="17" x2="12" y2="17" />
-            </svg>
+            <IconHelp size={16} />
           </button>
           <button
             onClick={() => setShowConsole(!showConsole)}

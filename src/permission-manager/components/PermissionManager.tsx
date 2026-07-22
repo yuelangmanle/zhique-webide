@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { permissionService } from '../services/permissionService';
 import { appStore } from '../../common/store/appStore';
 import { type PermissionState } from '../../common/types';
-import { IconAlert } from '@/common/components/Icons';
+import { IconAlert, IconClose } from '@/common/components/Icons';
+import { Skeleton } from '@/common/components/Skeleton';
 
 interface PermissionManagerProps {
   onClose?: () => void;
@@ -106,17 +107,29 @@ export const PermissionManager = ({ onClose }: PermissionManagerProps) => {
         {onClose && (
           <button
             onClick={onClose}
+            aria-label="关闭"
             className="w-11 h-11 flex items-center justify-center text-slate-400 active:text-white transition-colors"
           >
-            ✕
+            <IconClose size={20} />
           </button>
         )}
       </header>
 
       <div className="flex-1 overflow-y-auto p-3">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500" />
+          <div className="space-y-2.5 p-1">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="p-3.5 rounded-xl border border-slate-800 bg-slate-900">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-6 h-6 rounded shrink-0" />
+                  <div className="flex-1 flex flex-col gap-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                  <Skeleton className="w-11 h-6 rounded-full shrink-0" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="space-y-2.5">

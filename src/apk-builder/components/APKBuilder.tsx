@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apkBuilderService } from '../services/apkBuilderService';
 import { permissionService } from '@/permission-manager/services/permissionService';
 import { projectService } from '@/project-manager/services/projectService';
@@ -16,6 +16,13 @@ export const APKBuilder = () => {
   const [appName, setAppName] = useState('我的应用');
 
   const { permissionSettings, currentProject } = useStore();
+
+  // 默认应用名对齐当前项目
+  useEffect(() => {
+    if (currentProject) {
+      setAppName(currentProject.name || '我的应用');
+    }
+  }, [currentProject]);
 
   const permissions = permissionService.getAvailablePermissions();
 

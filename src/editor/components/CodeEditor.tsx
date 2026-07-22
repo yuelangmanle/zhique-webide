@@ -96,13 +96,19 @@ export const CodeEditor = ({ content, onChange, language = 'html' }: CodeEditorP
   }, [language]);
 
   useEffect(() => {
-    if (viewRef.current && viewRef.current.state.doc.toString() !== content) {
-      viewRef.current.dispatch({
-        changes: {
-          from: 0,
-          to: viewRef.current.state.doc.length,
-          insert: content,
-        },
+    const view = viewRef.current;
+    if (!view) return;
+    const currentDoc = view.state.doc.toString();
+    // 仅在外部内容与当前编辑器内容不一致时更新（避免输入时循环触发）
+    if (currentDoc !== content) {
+      // 保留当前光标位置（超出新文档长度时截断到末尾）
+      const oldSel = view.state.selection.main;
+      const newDocLen = content.length;
+      const anchor = Math.min(oldSel.anchor, newDocLen);
+      const head = Math.min(oldSel.head, newDocLen);
+      view.dispatch({
+        changes: { from: 0, to: view.state.doc.length, insert: content },
+        selection: { anchor, head },
       });
     }
   }, [content]);

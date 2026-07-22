@@ -62,12 +62,6 @@ const TYPE_DOT: Record<ToastType, string> = {
   info: 'bg-cyan-500',
 };
 
-const TYPE_TEXT: Record<ToastType, string> = {
-  success: 'text-emerald-500',
-  error: 'text-red-500',
-  info: 'text-cyan-500',
-};
-
 export function ToastContainer() {
   const [items, setItems] = useState<ToastItem[]>([]);
 
@@ -90,7 +84,6 @@ export function ToastContainer() {
           className={`flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-btn bg-slate-800 text-white text-sm shadow-elevated w-fit max-w-full ${t.leaving ? 'animate-toast-out' : 'animate-toast-in'}`}
         >
           <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${TYPE_DOT[t.type]}`} />
-          <span className={`font-medium shrink-0 ${TYPE_TEXT[t.type]}`}>·</span>
           <span className="break-words">{t.message}</span>
         </div>
       ))}
