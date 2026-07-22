@@ -13,7 +13,7 @@ import { toast, ToastContainer } from './common/components/Toast';
 import { ConfirmSheetContainer } from './common/components/ConfirmSheet';
 import { ProjectCardSkeleton } from './common/components/Skeleton';
 
-type TabView = 'editor' | 'preview' | 'ai' | 'builder';
+type TabView = 'editor' | 'preview' | 'ai' | 'projects' | 'builder';
 type FileType = 'html' | 'css' | 'js';
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
@@ -111,6 +111,7 @@ function App() {
     try {
       await loadProjectContent(project);
       setShowProjects(false);
+      setActiveTab('editor'); // 选中项目后切到编辑器
     } catch (e) {
       console.error('打开项目失败', e);
       // E5: 用 toast 替换 alert
@@ -186,7 +187,7 @@ function App() {
     { key: 'editor', label: '编辑', icon: IconEdit },
     { key: 'preview', label: '预览', icon: IconEye },
     { key: 'ai', label: 'AI', icon: IconAI },
-    { key: 'builder', label: '打包', icon: IconPackage },
+    { key: 'projects', label: '项目', icon: IconFolder },
   ];
 
   // 手势导航：触摸开始，记录起点
@@ -198,7 +199,8 @@ function App() {
   // 手势导航：触摸结束，计算滑动方向并切换标签
   const handleTouchEnd = (e: ReactTouchEvent) => {
     // 编辑器标签下禁用切换手势，避免与代码横向滚动/文本选择冲突
-    if (activeTab === 'editor') return;
+    // projects 标签下也禁用，避免与项目列表滚动冲突
+    if (activeTab === 'editor' || activeTab === 'projects') return;
     if (touchStartX.current === null || touchStartY.current === null) return;
     const endX = e.changedTouches[0].clientX;
     const endY = e.changedTouches[0].clientY;
@@ -256,19 +258,15 @@ function App() {
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             onClick={() => { loadProjects(); setShowProjects(true); }}
-            aria-label="项目列表"
-            className="flex items-center justify-center w-11 h-11 bg-slate-800 rounded-lg text-slate-300 active:bg-slate-700 transition-colors flex-shrink-0"
+            className="min-w-0 flex-1 text-left active:bg-slate-800/50 rounded-lg px-2 py-1 transition-colors"
           >
-            <IconFolder size={18} />
-          </button>
-          <div className="min-w-0 flex-1">
             <div className="text-white font-bold text-sm truncate">
               {state.currentProject?.name || '织雀'}
             </div>
             <div className="text-slate-500 text-[11px] truncate">
-              {state.currentProject ? `${state.currentProject.type === 'folder' ? '多文件项目' : '单文件'} · 已打开` : '点击文件夹图标选择项目'}
+              {state.currentProject ? `${state.currentProject.type === 'folder' ? '多文件项目' : '单文件'} · 已打开` : '点击选择项目'}
             </div>
-          </div>
+          </button>
         </div>
 
         {/* E10: 顶部栏右侧上下文操作，按 activeTab 条件渲染 */}
@@ -299,6 +297,17 @@ function App() {
             <IconRefresh size={18} />
           </button>
         )}
+
+        {/* O9: 常驻打包按钮，所有标签下都显示 */}
+        <button
+          onClick={() => { haptic(5); setActiveTab('builder'); }}
+          aria-label="打包"
+          className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors flex-shrink-0 ${
+            activeTab === 'builder' ? 'bg-cyan-500 text-white' : 'bg-slate-800 text-slate-300 active:bg-slate-700'
+          }`}
+        >
+          <IconPackage size={18} />
+        </button>
       </header>
 
       {/* 文件标签栏 */}
@@ -365,6 +374,17 @@ function App() {
         {activeTab === 'builder' && (
           <div key={activeTab} className="h-full animate-tab-in">
             <APKBuilder />
+          </div>
+        )}
+
+        {activeTab === 'projects' && (
+          <div key={activeTab} className="h-full animate-tab-in">
+            <ProjectList
+              projects={projects}
+              onSelectProject={handleSelectProject}
+              onProjectsChange={loadProjects}
+              onClose={() => setActiveTab('editor')}
+            />
           </div>
         )}
 

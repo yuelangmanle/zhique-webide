@@ -233,28 +233,27 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
 
   return (
     <div className="flex flex-col h-full bg-slate-950">
-      {/* 标签栏 */}
-      <div className="flex items-center border-b border-slate-800 flex-shrink-0">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 min-h-[44px] py-2.5 text-xs font-medium transition-colors relative ${
-              activeTab === tab.key
-                ? 'text-cyan-400'
-                : 'text-slate-500'
-            }`}
-          >
-            {tab.label}
-            {activeTab === tab.key && (
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-cyan-400 rounded-full" />
-            )}
-          </button>
-        ))}
+      {/* 标签栏：segmented control 样式 */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-800 flex-shrink-0">
+        <div className="flex flex-1 bg-slate-800/50 rounded-lg p-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex-1 min-h-[36px] py-1.5 text-xs font-medium rounded-md transition-all active:scale-[0.97] ${
+                activeTab === tab.key
+                  ? 'bg-cyan-500 text-white shadow-sm'
+                  : 'text-slate-400 active:text-slate-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         <button
           onClick={() => setShowSettings(!showSettings)}
           aria-label="API 设置"
-          className="min-h-[44px] px-3 py-2.5 text-slate-500 active:text-cyan-400 transition-colors"
+          className="min-h-[44px] min-w-[44px] px-3 py-2.5 text-slate-500 active:text-cyan-400 transition-colors flex items-center justify-center"
         >
           <SettingsIcon />
         </button>
