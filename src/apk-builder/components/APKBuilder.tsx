@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { apkBuilderService } from '../services/apkBuilderService';
 import { permissionService } from '@/permission-manager/services/permissionService';
+import { projectService } from '@/project-manager/services/projectService';
 import { appStore } from '@/common/store/appStore';
 import { type Permission } from '@/common/types';
 
@@ -22,6 +23,27 @@ export const APKBuilder = () => {
     setIsExporting(true);
     setExportResult(null);
 
+    const currentProject = appStore.getState().currentProject;
+    if (!currentProject) {
+      setExportResult({ success: false, message: '请先选择项目' });
+      setIsExporting(false);
+      return;
+    }
+
+    const htmlContent = await projectService.readFile(currentProject.id, 'index.html');
+    let cssContent = '';
+    let jsContent = '';
+    if (currentProject.type === 'folder') {
+      cssContent = await projectService.readFile(currentProject.id, 'style.css');
+      jsContent = await projectService.readFile(currentProject.id, 'script.js');
+    }
+
+    const webFiles = JSON.stringify({
+      'index.html': htmlContent,
+      'style.css': cssContent,
+      'script.js': jsContent,
+    });
+
     const selectedPermissions = permissions
       .filter((p) => appStore.getState().permissionSettings[p.name])
       .map((p) => p.name);
@@ -32,7 +54,7 @@ export const APKBuilder = () => {
       versionCode,
       icon: '',
       permissions: selectedPermissions,
-      webFiles: '',
+      webFiles,
       appName,
     };
 
@@ -145,14 +167,14 @@ export const APKBuilder = () => {
               <button
                 key={permission.name}
                 onClick={() => togglePermission(permission)}
-                className={`p-2.5 rounded-lg border transition-all flex flex-col items-center gap-1 ${
+                className={`min-h-[44px] p-2.5 rounded-lg border transition-all flex flex-col items-center gap-1 ${
                   appStore.getState().permissionSettings[permission.name]
                     ? 'bg-cyan-500/15 border-cyan-500 text-cyan-400'
                     : 'bg-slate-800 border-slate-700 text-slate-500'
                 }`}
               >
                 <span className="text-lg">{permission.icon}</span>
-                <span className="text-[10px] font-medium">{permission.description}</span>
+                <span className="text-[11px] font-medium">{permission.description}</span>
               </button>
             ))}
           </div>
@@ -162,7 +184,7 @@ export const APKBuilder = () => {
         <button
           onClick={handleExport}
           disabled={isExporting}
-          className="w-full py-3.5 bg-emerald-500 text-white font-bold rounded-xl active:bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-600 transition-colors"
+          className="w-full min-h-[44px] py-3.5 bg-emerald-500 text-white font-bold rounded-xl active:bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-400 transition-colors"
         >
           {isExporting ? '正在导出...' : '导出配置'}
         </button>
@@ -178,7 +200,7 @@ export const APKBuilder = () => {
           </div>
         )}
 
-        <div className="text-center text-slate-600 text-xs pb-2 leading-relaxed">
+        <div className="text-center text-slate-400 text-xs pb-2 leading-relaxed">
           真实 APK 打包请使用桌面端构建工具或云端构建服务。此处导出的配置文件可用于后续构建。
         </div>
       </div>

@@ -238,7 +238,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-2.5 text-xs font-medium transition-colors relative ${
+            className={`flex-1 min-h-[44px] py-2.5 text-xs font-medium transition-colors relative ${
               activeTab === tab.key
                 ? 'text-cyan-400'
                 : 'text-slate-500'
@@ -264,7 +264,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
         <div className="p-4 bg-slate-900 border-b border-slate-800 space-y-3 max-h-[70%] overflow-y-auto">
           <div className="flex items-center justify-between">
             <h3 className="text-white font-medium text-sm">API 设置</h3>
-            <span className="text-slate-500 text-[10px]">支持多方案保存</span>
+            <span className="text-slate-500 text-[11px]">支持多方案保存</span>
           </div>
 
           {/* 预设方案选择 */}
@@ -275,7 +275,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
                 <button
                   key={preset.id}
                   onClick={() => handlePresetChange(preset.id)}
-                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${
+                  className={`min-h-[44px] py-2 rounded-lg text-xs font-medium transition-colors ${
                     selectedPreset === preset.id
                       ? 'bg-cyan-500 text-white'
                       : 'bg-slate-800 text-slate-400 active:bg-slate-700'
@@ -310,7 +310,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
           />
           <button
             onClick={handleSaveSettings}
-            className="w-full py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-lg active:bg-cyan-600 transition-colors"
+            className="w-full min-h-[44px] py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-lg active:bg-cyan-600 transition-colors"
           >
             保存方案
           </button>
@@ -318,12 +318,12 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
           {/* 已保存方案列表 */}
           {savedProviders.length > 0 && (
             <div className="pt-2 border-t border-slate-800">
-              <p className="text-slate-500 text-[10px] mb-2">已保存方案</p>
+              <p className="text-slate-500 text-[11px] mb-2">已保存方案</p>
               <div className="space-y-1">
                 {savedProviders.map((p) => (
                   <div key={p.id} className="flex items-center justify-between px-2 py-1.5 bg-slate-800/50 rounded text-xs">
                     <span className="text-slate-300">{p.name}</span>
-                    <span className="text-slate-600">{p.model}</span>
+                    <span className="text-slate-400">{p.model}</span>
                   </div>
                 ))}
               </div>
@@ -342,7 +342,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
               <path d="M12 7v4" />
             </svg>
             <p className="text-sm">{placeholders[activeTab]}</p>
-            <p className="text-xs mt-2 text-slate-600">点击右上角设置图标配置API</p>
+            <p className="text-xs mt-2 text-slate-400">点击右上角设置图标配置API</p>
           </div>
         ) : (
           messages.map((msg, index) => (
@@ -361,7 +361,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
                 className={`max-w-[78%] px-3 py-2 rounded-2xl text-sm ${
                   msg.role === 'user'
                     ? 'bg-cyan-500 text-white rounded-tr-md'
-                    : 'bg-slate-800 text-slate-200 rounded-tl-md'
+                    : 'bg-slate-800 text-slate-200 rounded-tl-md ai-message selectable'
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{msg.content}</p>
@@ -402,7 +402,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
         <button
           onClick={handleSend}
           disabled={isGenerating || !prompt.trim()}
-          className="px-4 py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 disabled:bg-slate-800 disabled:text-slate-600 transition-colors"
+          className="px-4 py-2.5 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 disabled:bg-slate-800 disabled:text-slate-400 transition-colors"
         >
           发送
         </button>

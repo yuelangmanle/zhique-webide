@@ -37,13 +37,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             <h1 className="text-white text-2xl font-bold mb-3">应用遇到问题</h1>
             <p className="text-slate-400 text-sm mb-2">很抱歉，应用发生了未预期的错误。</p>
             {this.state.error && (
-              <pre className="text-red-400 text-xs bg-slate-900 rounded-lg p-3 mb-6 overflow-auto max-h-32 text-left whitespace-pre-wrap break-all">
+              <pre className="selectable text-red-400 text-xs bg-slate-900 rounded-lg p-3 mb-6 overflow-auto max-h-32 text-left whitespace-pre-wrap break-all">
                 {this.state.error.message}
               </pre>
             )}
             <button
               onClick={this.handleRetry}
-              className="px-6 py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors"
+              className="px-6 py-2.5 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors"
             >
               重试
             </button>

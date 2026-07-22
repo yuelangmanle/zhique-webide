@@ -112,14 +112,14 @@ export const PreviewPanel = ({ html, css, js }: PreviewPanelProps) => {
       <div ref={containerRef} className="flex-1 bg-white" />
 
       {showConsole && (
-        <div className="h-32 overflow-y-auto border-t border-slate-800 p-3 font-mono text-xs bg-slate-950 flex-shrink-0">
+        <div className="console-output selectable h-32 overflow-y-auto border-t border-slate-800 p-3 font-mono text-xs bg-slate-950 flex-shrink-0">
           <div className="text-slate-500 font-semibold mb-2">控制台输出</div>
           {consoleMessages.length === 0 ? (
-            <div className="text-slate-600">暂无输出...</div>
+            <div className="text-slate-400">暂无输出...</div>
           ) : (
             consoleMessages.map((msg, index) => (
               <div key={index} className={`flex items-start gap-2 mb-1 ${getMessageColor(msg.type)}`}>
-                <span className="text-slate-600 flex-shrink-0">[{getMessageLabel(msg.type)}]</span>
+                <span className="text-slate-400 flex-shrink-0">[{getMessageLabel(msg.type)}]</span>
                 <span className="break-all">{msg.message}</span>
               </div>
             ))

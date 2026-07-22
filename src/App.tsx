@@ -159,6 +159,8 @@ function App() {
 
   // 手势导航：触摸结束，计算滑动方向并切换标签
   const handleTouchEnd = (e: ReactTouchEvent) => {
+    // 编辑器标签下禁用切换手势，避免与代码横向滚动/文本选择冲突
+    if (activeTab === 'editor') return;
     if (touchStartX.current === null || touchStartY.current === null) return;
     const endX = e.changedTouches[0].clientX;
     const endY = e.changedTouches[0].clientY;
@@ -167,7 +169,7 @@ function App() {
     touchStartX.current = null;
     touchStartY.current = null;
 
-    const threshold = 50;
+    const threshold = 80;
     // 水平位移需超过阈值，且水平占主导（避免干扰垂直滚动/选择）
     if (Math.abs(deltaX) <= threshold) return;
     if (Math.abs(deltaX) <= Math.abs(deltaY)) return;
@@ -217,7 +219,7 @@ function App() {
             <div className="text-white font-bold text-sm truncate">
               {state.currentProject?.name || '织雀'}
             </div>
-            <div className="text-slate-500 text-[10px] truncate">
+            <div className="text-slate-500 text-[11px] truncate">
               {state.currentProject ? `${state.currentProject.type === 'folder' ? '多文件项目' : '单文件'} · 已打开` : '点击文件夹图标选择项目'}
             </div>
           </div>
@@ -227,7 +229,7 @@ function App() {
         {activeTab === 'editor' && state.currentProject && (
           <button
             onClick={handleManualSave}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex-shrink-0 ${
+            className={`flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex-shrink-0 ${
               saveStatus === 'saved'
                 ? 'bg-emerald-500 text-white active:bg-emerald-600'
                 : saveStatus === 'saving'
@@ -248,7 +250,7 @@ function App() {
             <button
               key={tab.key}
               onClick={() => setActiveFile(tab.key)}
-              className={`flex-1 py-2.5 text-xs font-medium transition-colors relative ${
+              className={`flex-1 min-h-[44px] py-2.5 text-xs font-medium transition-colors relative ${
                 activeFile === tab.key
                   ? tab.color
                   : 'text-slate-500 active:text-slate-300'
@@ -311,14 +313,14 @@ function App() {
                 <p className="text-slate-400 text-sm mb-6">移动端代码编辑器，随时随地编程</p>
                 <button
                   onClick={() => { loadProjects(); setShowProjects(true); }}
-                  className="px-6 py-2.5 bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors"
+                  className="px-6 py-2.5 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors"
                 >
                   创建新项目
                 </button>
               </>
             ) : (
               <>
-                <IconEye size={56} className="mb-4 text-slate-600" />
+                <IconEye size={56} className="mb-4 text-slate-400" />
                 <p className="text-slate-400 text-sm">请先选择一个项目</p>
               </>
             )}
@@ -337,14 +339,14 @@ function App() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex flex-col items-center gap-0.5 py-2 px-3 transition-all ${
+              className={`flex flex-col items-center gap-0.5 min-h-[44px] py-2 px-3 transition-all ${
                 activeTab === tab.key
                   ? 'text-cyan-400'
                   : 'text-slate-500 active:text-slate-300'
               }`}
             >
               <Icon size={20} />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-[11px] font-medium">{tab.label}</span>
             </button>
           );
         })}

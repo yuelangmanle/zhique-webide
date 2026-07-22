@@ -60,7 +60,7 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
         </div>
         <button
           onClick={() => setShowCreateDialog(true)}
-          className="px-4 py-2 bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors flex items-center gap-1"
+          className="px-4 py-2 min-h-[44px] bg-cyan-500 text-white text-sm font-medium rounded-xl active:bg-cyan-600 transition-colors flex items-center gap-1"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
@@ -76,7 +76,7 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
             </svg>
             <p className="text-sm">还没有项目</p>
-            <p className="text-xs mt-1 text-slate-600">点击右上角新建一个吧</p>
+            <p className="text-xs mt-1 text-slate-400">点击右上角新建一个吧</p>
           </div>
         ) : (
           projects.map((project) => (
@@ -92,7 +92,7 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
               <div className="flex-1 min-w-0">
                 <div className="text-white font-medium text-sm truncate">{project.name}</div>
                 <div className="text-slate-500 text-xs mt-0.5 flex items-center gap-2">
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] ${project.type === 'folder' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                  <span className={`px-1.5 py-0.5 rounded text-[11px] ${project.type === 'folder' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-purple-500/20 text-purple-400'}`}>
                     {project.type === 'single' ? '单文件' : '多文件'}
                   </span>
                   <span>{formatDate(project.updatedAt)}</span>
@@ -101,7 +101,7 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
               <button
                 onClick={(e) => handleDeleteProject(project, e)}
                 aria-label="删除项目"
-                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-600 active:text-red-400 transition-colors flex-shrink-0"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 active:text-red-400 transition-colors flex-shrink-0"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -138,7 +138,7 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
             <div className="flex gap-2 mb-5">
               <button
                 onClick={() => setProjectType('folder')}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                className={`flex-1 min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   projectType === 'folder'
                     ? 'bg-cyan-500 text-white'
                     : 'bg-slate-700 text-slate-400'
@@ -148,7 +148,7 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
               </button>
               <button
                 onClick={() => setProjectType('single')}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                className={`flex-1 min-h-[44px] py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   projectType === 'single'
                     ? 'bg-cyan-500 text-white'
                     : 'bg-slate-700 text-slate-400'
@@ -163,14 +163,14 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange }: Pro
             <div className="flex gap-3">
               <button
                 onClick={() => { setShowCreateDialog(false); setProjectName(''); setError(''); }}
-                className="flex-1 py-2.5 bg-slate-700 text-slate-300 rounded-xl text-sm font-medium active:bg-slate-600 transition-colors"
+                className="flex-1 min-h-[44px] py-2.5 bg-slate-700 text-slate-300 rounded-xl text-sm font-medium active:bg-slate-600 transition-colors"
               >
                 取消
               </button>
               <button
                 onClick={handleCreateProject}
                 disabled={!projectName.trim() || creating}
-                className="flex-1 py-2.5 bg-cyan-500 text-white rounded-xl text-sm font-medium active:bg-cyan-600 disabled:bg-slate-700 disabled:text-slate-500 transition-colors"
+                className="flex-1 min-h-[44px] py-2.5 bg-cyan-500 text-white rounded-xl text-sm font-medium active:bg-cyan-600 disabled:bg-slate-700 disabled:text-slate-500 transition-colors"
               >
                 {creating ? '创建中...' : '创建'}
               </button>

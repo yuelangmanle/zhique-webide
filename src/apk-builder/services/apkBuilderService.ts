@@ -95,6 +95,7 @@ class APKBuilderService {
         permissions: config.permissions,
         androidPermissions,
       },
+      webFiles: config.webFiles,
       manifest,
       buildGradle,
       exportedAt: new Date().toISOString(),

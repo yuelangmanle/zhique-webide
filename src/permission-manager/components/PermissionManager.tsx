@@ -111,7 +111,7 @@ export const PermissionManager = ({ onClose }: PermissionManagerProps) => {
         {onClose && (
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 active:text-white transition-colors"
+            className="w-11 h-11 flex items-center justify-center text-slate-400 active:text-white transition-colors"
           >
             ✕
           </button>
@@ -146,15 +146,19 @@ export const PermissionManager = ({ onClose }: PermissionManagerProps) => {
                     {getStatusBadge(group.key)}
                     <button
                       onClick={() => togglePermission(group.key)}
-                      className={`relative w-11 h-6 rounded-full transition-colors ${
-                        permissions[group.key] ? 'bg-cyan-500' : 'bg-slate-700'
-                      }`}
+                      className="min-h-[44px] flex items-center"
                     >
                       <span
-                        className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                          permissions[group.key] ? 'translate-x-6' : 'translate-x-1'
+                        className={`relative w-11 h-6 rounded-full transition-colors ${
+                          permissions[group.key] ? 'bg-cyan-500' : 'bg-slate-700'
                         }`}
-                      />
+                      >
+                        <span
+                          className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                            permissions[group.key] ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </span>
                     </button>
                   </div>
                 </div>
