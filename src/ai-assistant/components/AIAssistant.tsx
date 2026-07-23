@@ -399,7 +399,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
 
       {/* 输入栏 */}
       <div
-        className="p-2.5 border-t border-slate-800 flex gap-2"
+        className="p-2.5 border-t border-slate-800 flex gap-2 max-w-2xl mx-auto w-full"
         style={{ paddingBottom: 'calc(var(--safe-area-inset-bottom, 0px) + 0.625rem)' }}
       >
         <input

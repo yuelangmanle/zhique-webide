@@ -2,6 +2,38 @@
 
 本项目版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)：`主版本.次版本.修订号`
 
+## [3.2.0] - 2026-07-23
+
+### 新增
+
+#### 关于界面
+- 顶部栏新增常驻 `IconInfo` 入口，点击打开全屏“关于”页面
+- 关于页展示应用 Logo、名称、当前版本号（通过 `__APP_VERSION__` 注入）
+- 一键跳转 GitHub 仓库：`https://github.com/yuelangmanle/zhique-webide`
+- “检查更新”功能：调用 GitHub Releases API 拉取最新版本；检测到新版本时显示版本号、versionCode、发布时间，并提供“一键下载更新”按钮
+- 内嵌更新日志：默认展示当前版本摘要，支持一键展开查看完整 `CHANGELOG.md`
+
+### 优化
+
+#### UI 宽屏适配
+- `APKBuilder` 表单区增加 `max-w-md mx-auto`，避免桌面宽屏过度拉伸
+- `APKBuilder` 导出按钮改为 sticky 底部固定，无需滚动到底部即可操作
+- `AIAssistant` 输入栏增加 `max-w-2xl mx-auto`
+- `ProjectList` 项目列表增加 `max-w-2xl mx-auto`
+
+### 修复
+
+#### 签名一致性
+- 沙箱重置导致 keystore 丢失，每次重新生成会产生不同签名，造成无法覆盖安装
+- 将当前 keystore 转为 base64 文件 `zhique-release.keystore.b64` 纳入仓库
+- `build-apk.sh` 在 keystore 丢失时自动从 base64 备份恢复，保证后续所有版本签名一致
+
+### 版本号
+- AndroidManifest: versionCode=33, versionName=3.2.0
+- package.json: 3.2.0
+
+---
+
 ## [3.1.1] - 2026-07-23
 
 ### 修复（superpowers 代码审查）

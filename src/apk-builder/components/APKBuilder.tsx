@@ -114,10 +114,11 @@ export const APKBuilder = () => {
         <h2 className="text-white font-bold text-base">配置导出</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {/* 应用配置 */}
-        <div className="bg-slate-900 rounded-xl p-4 space-y-3">
-          <h3 className="text-white font-medium text-sm">应用配置</h3>
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="max-w-md mx-auto space-y-3">
+          {/* 应用配置 */}
+          <div className="bg-slate-900 rounded-xl p-4 space-y-3">
+            <h3 className="text-white font-medium text-sm">应用配置</h3>
 
           <div>
             <label className="block text-slate-500 text-xs mb-1.5">应用名称</label>
@@ -209,18 +210,21 @@ export const APKBuilder = () => {
           </div>
         </div>
 
-        {/* 导出按钮 */}
+          <div className="text-center text-slate-400 text-xs pb-2 leading-relaxed">
+            真实 APK 打包请使用桌面端构建工具或云端构建服务。此处导出的配置文件可用于后续构建。
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky 底部导出按钮 */}
+      <div className="flex-shrink-0 px-3 py-3 border-t border-slate-800 bg-slate-950/95 backdrop-blur-sm">
         <button
           onClick={handleExport}
           disabled={isExporting}
-          className="w-full min-h-[44px] py-3.5 bg-emerald-500 text-white font-bold rounded-xl active:bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-400 transition-colors"
+          className="w-full max-w-md mx-auto block min-h-[44px] py-3.5 bg-emerald-500 text-white font-bold rounded-xl active:bg-emerald-600 disabled:bg-slate-800 disabled:text-slate-400 transition-colors"
         >
           {isExporting ? '正在导出...' : '导出配置'}
         </button>
-
-        <div className="text-center text-slate-400 text-xs pb-2 leading-relaxed">
-          真实 APK 打包请使用桌面端构建工具或云端构建服务。此处导出的配置文件可用于后续构建。
-        </div>
       </div>
     </div>
   );

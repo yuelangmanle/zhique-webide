@@ -77,7 +77,7 @@ export const ProjectList = ({ projects, onSelectProject, onProjectsChange, onClo
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2">
+      <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-2 max-w-2xl mx-auto w-full">
         {projects.length === 0 ? (
           <div className="text-center text-slate-500 py-16">
             <svg className="mx-auto mb-3" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

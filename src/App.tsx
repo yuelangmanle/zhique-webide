@@ -4,16 +4,17 @@ import { CodeEditor } from './editor/components/CodeEditor';
 import { PreviewPanel } from './preview/components/PreviewPanel';
 import { AIAssistant } from './ai-assistant/components/AIAssistant';
 import { APKBuilder } from './apk-builder/components/APKBuilder';
+import { About } from './about/components/About';
 import { projectService } from './project-manager/services/projectService';
 import { appStore } from './common/store/appStore';
 import { useStore } from './common/hooks/useStore';
 import { type Project } from './common/types';
-import { IconFolder, IconSave, IconCheck, IconEdit, IconEye, IconAI, IconPackage, IconBird, IconRefresh } from './common/components/Icons';
+import { IconFolder, IconSave, IconCheck, IconEdit, IconEye, IconAI, IconPackage, IconBird, IconRefresh, IconInfo } from './common/components/Icons';
 import { toast, ToastContainer } from './common/components/Toast';
 import { ConfirmSheetContainer } from './common/components/ConfirmSheet';
 import { ProjectCardSkeleton } from './common/components/Skeleton';
 
-type TabView = 'editor' | 'preview' | 'ai' | 'projects' | 'builder';
+type TabView = 'editor' | 'preview' | 'ai' | 'projects' | 'builder' | 'about';
 type FileType = 'html' | 'css' | 'js';
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
@@ -202,6 +203,9 @@ function App() {
     { key: 'projects', label: '项目', icon: IconFolder },
   ];
 
+  // 顶部栏可切换的上下文标签（builder/about 不参与底部导航循环）
+  const topTabs: TabView[] = ['builder', 'about'];
+
   // 手势导航：触摸开始，记录起点
   const handleTouchStart = (e: ReactTouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -212,7 +216,8 @@ function App() {
   const handleTouchEnd = (e: ReactTouchEvent) => {
     // 编辑器标签下禁用切换手势，避免与代码横向滚动/文本选择冲突
     // projects 标签下也禁用，避免与项目列表滚动冲突
-    if (activeTab === 'editor' || activeTab === 'projects') return;
+    // builder/about 不参与底部导航循环，也禁用手势切换
+    if (activeTab === 'editor' || activeTab === 'projects' || topTabs.includes(activeTab)) return;
     if (touchStartX.current === null || touchStartY.current === null) return;
     const endX = e.changedTouches[0].clientX;
     const endY = e.changedTouches[0].clientY;
@@ -320,6 +325,17 @@ function App() {
         >
           <IconPackage size={18} />
         </button>
+
+        {/* 关于入口：所有标签下都显示 */}
+        <button
+          onClick={() => { haptic(5); setActiveTab('about'); }}
+          aria-label="关于"
+          className={`flex items-center justify-center w-11 h-11 rounded-lg transition-colors flex-shrink-0 ${
+            activeTab === 'about' ? 'bg-cyan-500 text-white' : 'bg-slate-800 text-slate-300 active:bg-slate-700'
+          }`}
+        >
+          <IconInfo size={18} />
+        </button>
       </header>
 
       {/* 文件标签栏 */}
@@ -386,6 +402,12 @@ function App() {
         {activeTab === 'builder' && (
           <div key={activeTab} className="h-full animate-tab-in">
             <APKBuilder />
+          </div>
+        )}
+
+        {activeTab === 'about' && (
+          <div key={activeTab} className="h-full animate-tab-in">
+            <About />
           </div>
         )}
 
