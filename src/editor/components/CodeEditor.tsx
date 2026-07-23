@@ -28,6 +28,9 @@ interface CodeEditorProps {
 export const CodeEditor = ({ content, onChange, language = 'html' }: CodeEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
+  // 用 ref 持有最新 onChange，避免将其纳入 effect deps 导致编辑器重建
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -65,7 +68,7 @@ export const CodeEditor = ({ content, onChange, language = 'html' }: CodeEditorP
         ]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            onChange(update.state.doc.toString());
+            onChangeRef.current(update.state.doc.toString());
           }
         }),
         EditorView.theme({

@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, Fragment, type ErrorInfo, type ReactNode } from 'react';
 import { IconAlert } from '@/common/components/Icons';
 
 interface ErrorBoundaryProps {
@@ -8,15 +8,16 @@ interface ErrorBoundaryProps {
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  retryKey: number;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, retryKey: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return { hasError: true, error };
   }
 
@@ -26,7 +27,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   private handleRetry = (): void => {
-    this.setState({ hasError: false, error: null });
+    // 递增 retryKey 强制子组件完全重新挂载，清除可能引发错误的旧状态
+    this.setState((prev) => ({ hasError: false, error: null, retryKey: prev.retryKey + 1 }));
   };
 
   render(): ReactNode {
@@ -55,7 +57,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       );
     }
 
-    return this.props.children;
+    return <Fragment key={this.state.retryKey}>{this.props.children}</Fragment>;
   }
 }
 

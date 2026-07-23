@@ -62,13 +62,21 @@ const TYPE_DOT: Record<ToastType, string> = {
   info: 'bg-cyan-500',
 };
 
+// 单例挂载守卫：ToastContainer 应全局只挂载一次
+let toastMountCount = 0;
+
 export function ToastContainer() {
   const [items, setItems] = useState<ToastItem[]>([]);
 
   useEffect(() => {
+    toastMountCount++;
+    if (toastMountCount > 1) {
+      console.warn('[Toast] ToastContainer 已挂载多处，可能导致 Toast 重复显示');
+    }
     const listener = (toasts: ToastItem[]) => setItems(toasts);
     storeRef.current.listeners.push(listener);
     return () => {
+      toastMountCount--;
       storeRef.current.listeners = storeRef.current.listeners.filter((l) => l !== listener);
     };
   }, []);

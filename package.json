@@ -1,6 +1,6 @@
 {
   "name": "mobile-web-ide",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Mobile Web IDE - A mobile web development tool for Android",
   "type": "module",
   "scripts": {
@@ -11,10 +11,7 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write src",
     "test": "jest",
-    "test:watch": "jest --watch",
-    "cap:sync": "npx cap sync",
-    "cap:open": "npx cap open android",
-    "cap:build": "npx cap build android"
+    "test:watch": "jest --watch"
   },
   "keywords": [
     "web-ide",
@@ -25,13 +22,6 @@
   "author": "MobileWebIDE Team",
   "license": "MIT",
   "dependencies": {
-    "@capacitor/android": "^8.4.2",
-    "@capacitor/camera": "^8.2.1",
-    "@capacitor/cli": "^8.4.2",
-    "@capacitor/core": "^8.4.2",
-    "@capacitor/filesystem": "^8.1.2",
-    "@capacitor/geolocation": "^8.2.0",
-    "@capawesome/capacitor-permissions": "^0.1.1",
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/commands": "^6.10.4",
     "@codemirror/lang-css": "^6.3.1",
@@ -59,7 +49,7 @@
     "@typescript-eslint/eslint-plugin": "^8.65.0",
     "@typescript-eslint/parser": "^8.65.0",
     "autoprefixer": "^10.5.4",
-    "eslint": "^10.7.0",
+    "eslint": "^9.7.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.6",
     "eslint-plugin-react": "^7.37.5",

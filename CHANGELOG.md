@@ -2,6 +2,41 @@
 
 本项目版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)：`主版本.次版本.修订号`
 
+## [3.1.1] - 2026-07-23
+
+### 修复（superpowers 代码审查）
+
+#### Critical
+- **previewService 监听器泄漏**：`dispose()` 中 `removeEventListener` 因 `bind(this)` 每次创建新引用而失效，改为类箭头函数属性 `boundHandleMessage` 保持稳定引用
+- **crypto.ts fallback 明文存储**：`crypto.subtle` 不可用时回退到 base64（非加密），改为返回空字符串拒绝存储，新增 `isEncryptionSupported()` 供 UI 层预检查；AIAssistant 保存 API Key 前增加加密支持校验
+
+#### Important
+- **appStore 测试隔离**：单例 store 跨测试累积 `permissionSettings`，新增 `reset()` 方法在 `beforeEach` 中重置
+- **ConfirmSheet Promise 挂起**：重叠调用 `confirm()` 覆盖旧 state 导致旧 Promise 永久挂起，入口处先 `resolve(false)` 解析旧 Promise
+- **autoSave stale closure**：`autoSave` 闭包捕获 `state.currentProject`，删除项目后 pending timer 仍写入已删除项目；改为 `appStore.getState()` 实时读取；新增卸载清理 effect 清除 `savedResetTimer`
+- **旧 XOR 伪加密残留**：删除 `utils/index.ts` 中未使用的 `encryptString`/`decryptString`（XOR + base64，非安全加密）
+- **crypto.ts 无测试**：新增 12 个测试用例覆盖加解密往返、空串、篡改密文、JSON 加解密、`isEncryptionSupported`
+- **eslint peer dependency 冲突**：`eslint@^10` 与 `eslint-plugin-react`（peer 要求 `eslint ^9.7`）冲突，降级至 `^9.7.0`；清理全部 Capacitor 依赖和脚本
+
+#### Minor
+- `index.css` `--safe-area-inset-left/right` 从硬编码 `0px` 改为 `env(safe-area-inset-*, 0px)`
+- `CodeEditor` 用 `onChangeRef` 持有最新 `onChange`，避免闭包过期且不触发编辑器重建
+- `ErrorBoundary` 重试时递增 `retryKey` 强制子组件重新挂载，清除引发错误的旧状态
+- `previewService.handleMessage` 校验 `event.source` 为当前 iframe 的 `contentWindow`，防止其他来源消息污染控制台
+- `Toast`/`ConfirmSheet` 新增单例挂载守卫，多处挂载时 `console.warn`
+- `handleCodeGenerated` / `APKBuilder` 单文件导出补充设计意图注释
+
+### 依赖
+- 移除 `@capacitor/android`、`@capacitor/camera`、`@capacitor/cli`、`@capacitor/core`、`@capacitor/filesystem`、`@capacitor/geolocation`、`@capawesome/capacitor-permissions`
+- 移除 `cap:sync`/`cap:open`/`cap:build` 脚本
+- `eslint` 从 `^10.7.0` 降级至 `^9.7.0`
+
+### 版本号
+- AndroidManifest: versionCode=32, versionName=3.1.1
+- package.json: 3.1.1
+
+---
+
 ## [3.1.0] - 2026-07-22
 
 ### 新增

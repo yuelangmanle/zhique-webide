@@ -25,20 +25,3 @@ export const validateVersionName = (versionName: string): boolean => {
 export const sanitizeCode = (code: string): string => {
   return code.replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, '');
 };
-
-export const encryptString = (str: string, key: string): string => {
-  let result = '';
-  for (let i = 0; i < str.length; i++) {
-    result += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-  }
-  return btoa(result);
-};
-
-export const decryptString = (encrypted: string, key: string): string => {
-  const decoded = atob(encrypted);
-  let result = '';
-  for (let i = 0; i < decoded.length; i++) {
-    result += String.fromCharCode(decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-  }
-  return result;
-};

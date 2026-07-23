@@ -4,14 +4,12 @@ import { previewService } from './previewService';
 describe('previewService', () => {
   let container: HTMLElement;
   // 跟踪 window 'message' 事件监听器
-  // 注意：源码 dispose 使用 this.handleMessage.bind(this) 移除监听，
-  // 每次调用 bind 创建新引用，导致 removeEventListener 实际无效。
-  // 为保证测试隔离，mock addEventListener/removeEventListener，
-  // removeEventListener('message', ...) 时清空所有 message listeners。
   const messageListeners: Array<(event: { data: unknown }) => void> = [];
 
   function emitMessage(data: unknown): void {
-    const event = { data } as MessageEvent;
+    // 设置 source 为 iframe 的 contentWindow，匹配 previewService 中的来源校验
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement | null;
+    const event = { data, source: iframe?.contentWindow ?? null } as MessageEvent;
     messageListeners.forEach((l) => l(event as never));
   }
 
@@ -38,16 +36,20 @@ describe('previewService', () => {
       },
     });
 
+    // 跟踪真实的 message 监听器，用于测试中模拟 postMessage
     jest.spyOn(window, 'addEventListener').mockImplementation(((type: string, listener: unknown) => {
       if (type === 'message' && typeof listener === 'function') {
         messageListeners.push(listener as (event: { data: unknown }) => void);
       }
     }) as typeof window.addEventListener);
 
-    jest.spyOn(window, 'removeEventListener').mockImplementation(((type: string) => {
-      if (type === 'message') {
-        // 弥补源码 .bind() 导致的无法精确移除问题，清空所有 message listeners
-        messageListeners.length = 0;
+    jest.spyOn(window, 'removeEventListener').mockImplementation(((type: string, listener: unknown) => {
+      if (type === 'message' && typeof listener === 'function') {
+        // 真实移除：源码用箭头函数属性保持稳定引用，此处精确移除
+        const idx = messageListeners.indexOf(listener as (event: { data: unknown }) => void);
+        if (idx !== -1) {
+          messageListeners.splice(idx, 1);
+        }
       }
     }) as typeof window.removeEventListener);
   });

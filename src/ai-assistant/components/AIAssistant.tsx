@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { aiService } from '../services/aiService';
 import { AIProvider } from '@/common/types';
-import { encrypt as cryptoEncrypt, decrypt as cryptoDecrypt } from '@/common/utils/crypto';
+import { encrypt as cryptoEncrypt, decrypt as cryptoDecrypt, isEncryptionSupported } from '@/common/utils/crypto';
 import { toast } from '@/common/components/Toast';
 
 interface AIAssistantProps {
@@ -106,6 +106,11 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
       return;
     }
 
+    if (!isEncryptionSupported()) {
+      toast.error('当前环境不支持加密存储，无法保存 API Key');
+      return;
+    }
+
     const provider: ProviderPreset = {
       id: selectedPreset,
       name: PRESETS.find((p) => p.id === selectedPreset)?.name || '自定义',
@@ -121,6 +126,10 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     localStorage.setItem(ACTIVE_KEY, provider.id);
     // API Key 加密后存储
     const encryptedKey = await cryptoEncrypt(apiKey.trim());
+    if (!encryptedKey) {
+      toast.error('API Key 加密失败，未保存');
+      return;
+    }
     localStorage.setItem('zhique-ai-key-' + provider.id, encryptedKey);
 
     // 注册到 aiService
@@ -134,6 +143,7 @@ export const AIAssistant = ({ onCodeGenerated, currentCode }: AIAssistantProps) 
     aiService.registerProvider(aiProvider);
     aiService.setCurrentProvider(provider.id);
 
+    toast.success('API 设置已保存');
     setShowSettings(false);
   };
 

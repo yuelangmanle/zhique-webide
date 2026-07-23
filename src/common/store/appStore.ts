@@ -48,6 +48,15 @@ class AppStore {
     };
     this.notify();
   }
+
+  /** 重置到初始状态（仅用于测试隔离） */
+  reset(): void {
+    this.state = {
+      currentProject: null,
+      permissionSettings: {},
+    };
+    this.notify();
+  }
 }
 
 export const appStore = new AppStore();

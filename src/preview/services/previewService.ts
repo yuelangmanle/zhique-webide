@@ -14,6 +14,20 @@ class WebViewPreviewService implements PreviewService {
   private iframe: HTMLIFrameElement | null = null;
   private consoleMessages: ConsoleMessage[] = [];
   private consoleCallbacks: Set<(message: ConsoleMessage) => void> = new Set();
+  // 用箭头函数属性保持稳定引用，确保 removeEventListener 能正确移除
+  private boundHandleMessage = (event: MessageEvent): void => {
+    // 仅处理来自当前预览 iframe 的消息，防止其他来源的消息污染控制台输出
+    const expectedSource = this.iframe?.contentWindow;
+    if (expectedSource && event.source !== expectedSource) return;
+    if (event.data?.type === 'console') {
+      const message: ConsoleMessage = {
+        type: event.data.level || 'log',
+        message: event.data.message,
+      };
+      this.consoleMessages.push(message);
+      this.consoleCallbacks.forEach((callback) => callback(message));
+    }
+  };
 
   init(container: HTMLElement): void {
     this.iframe = document.createElement('iframe');
@@ -24,18 +38,7 @@ class WebViewPreviewService implements PreviewService {
     this.iframe.className = 'iframe-preview';
     container.appendChild(this.iframe);
 
-    window.addEventListener('message', this.handleMessage.bind(this));
-  }
-
-  private handleMessage(event: MessageEvent): void {
-    if (event.data?.type === 'console') {
-      const message: ConsoleMessage = {
-        type: event.data.level || 'log',
-        message: event.data.message,
-      };
-      this.consoleMessages.push(message);
-      this.consoleCallbacks.forEach((callback) => callback(message));
-    }
+    window.addEventListener('message', this.boundHandleMessage);
   }
 
   render(html: string, css: string, js: string): void {
@@ -118,7 +121,7 @@ class WebViewPreviewService implements PreviewService {
 
   dispose(): void {
     this.consoleCallbacks.clear();
-    window.removeEventListener('message', this.handleMessage.bind(this));
+    window.removeEventListener('message', this.boundHandleMessage);
     if (this.iframe && this.iframe.parentElement) {
       this.iframe.parentElement.removeChild(this.iframe);
     }

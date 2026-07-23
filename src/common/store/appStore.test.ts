@@ -4,10 +4,8 @@ import type { Project } from '../types';
 
 describe('appStore', () => {
   beforeEach(() => {
-    // appStore 是单例，无法直接重置内部 state；
-    // 这里通过 setCurrentProject(null) 把 currentProject 清空，
-    // 并通过相对变化验证行为（不依赖具体初始值）
-    appStore.setCurrentProject(null);
+    // 重置单例 state，确保测试隔离
+    appStore.reset();
   });
 
   it('setCurrentProject 后 getState() 返回新引用（!== 旧引用）', () => {

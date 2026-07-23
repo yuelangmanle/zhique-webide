@@ -42,6 +42,8 @@ export const APKBuilder = () => {
     const htmlContent = await projectService.readFile(currentProject.id, 'index.html');
     let cssContent = '';
     let jsContent = '';
+    // 多文件项目分别读取 CSS/JS；单文件项目仅含 index.html，CSS/JS 留空
+    // （构建脚本对空 style.css/script.js 做了兼容处理，单文件场景下全量代码内联在 HTML 中）
     if (currentProject.type === 'folder') {
       cssContent = await projectService.readFile(currentProject.id, 'style.css');
       jsContent = await projectService.readFile(currentProject.id, 'script.js');

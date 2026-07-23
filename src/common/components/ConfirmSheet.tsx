@@ -31,6 +31,10 @@ function emit() {
 
 export function confirm(options: ConfirmOptions): Promise<boolean> {
   return new Promise((resolve) => {
+    // 若已有 pending confirm，先解析为 false，避免旧 Promise 永久挂起
+    if (storeRef.current.state?.resolve) {
+      storeRef.current.state.resolve(false);
+    }
     storeRef.current.state = { ...options, resolve };
     emit();
   });
@@ -46,13 +50,21 @@ function close(result: boolean) {
 // 危险操作判断：确认文案含删除/移除/清除等关键词时使用红色
 const DANGER_PATTERN = /删|移除|清除|清空|卸载|销毁|重置/;
 
+// 单例挂载守卫：ConfirmSheetContainer 应全局只挂载一次
+let confirmMountCount = 0;
+
 export function ConfirmSheetContainer() {
   const [state, setState] = useState<ConfirmState | null>(null);
 
   useEffect(() => {
+    confirmMountCount++;
+    if (confirmMountCount > 1) {
+      console.warn('[ConfirmSheet] ConfirmSheetContainer 已挂载多处，可能导致确认弹窗重复');
+    }
     const listener = (s: ConfirmState | null) => setState(s);
     storeRef.current.listeners.push(listener);
     return () => {
+      confirmMountCount--;
       storeRef.current.listeners = storeRef.current.listeners.filter((l) => l !== listener);
     };
   }, []);

@@ -6,7 +6,8 @@
  * 通过 PBKDF2 派生 AES-GCM 密钥。
  *
  * 注意：crypto.subtle 在 file:// 协议下通常可用（WebView 中 SubtleCrypto 一般可用）；
- * 若运行环境不可用，会 fallback 到 base64 编码并 console.warn。
+ * 若运行环境不可用，encrypt/decrypt 将返回空字符串以拒绝存储/读取未加密的敏感数据，
+ * 调用方应通过 isEncryptionSupported() 预检查并向用户提示。
  *
  * 输出格式：base64(iv) + ':' + base64(ciphertext)
  */
@@ -33,6 +34,12 @@ const isSubtleCryptoAvailable = (): boolean => {
     typeof crypto.subtle.encrypt === 'function'
   );
 };
+
+/**
+ * 检测当前环境是否支持加密存储
+ * 供 UI 层在保存 API Key 前判断是否应该提示用户
+ */
+export const isEncryptionSupported = (): boolean => isSubtleCryptoAvailable();
 
 /**
  * Uint8Array -> Base64 字符串
@@ -97,7 +104,8 @@ const deriveAesKey = async (): Promise<CryptoKey> => {
  * 加密字符串
  *
  * 输出格式：base64(iv) + ':' + base64(ciphertext)
- * 若 crypto.subtle 不可用或加密失败，fallback 到 base64 编码（UTF-8 安全）并 console.warn。
+ * 若 crypto.subtle 不可用或加密失败，返回空字符串（拒绝存储明文）。
+ * 调用方应在保存前检查 isEncryptionSupported()，并向用户提示。
  */
 export const encrypt = async (plaintext: string): Promise<string> => {
   if (!plaintext) {
@@ -105,8 +113,8 @@ export const encrypt = async (plaintext: string): Promise<string> => {
   }
 
   if (!isSubtleCryptoAvailable()) {
-    console.warn('[crypto] crypto.subtle 不可用，回退到 base64 编码（非加密）');
-    return bytesToBase64(new TextEncoder().encode(plaintext));
+    console.error('[crypto] crypto.subtle 不可用，拒绝存储未加密的敏感数据');
+    return '';
   }
 
   try {
@@ -121,8 +129,8 @@ export const encrypt = async (plaintext: string): Promise<string> => {
 
     return `${bytesToBase64(iv)}${SEPARATOR}${bytesToBase64(new Uint8Array(ciphertext))}`;
   } catch (err) {
-    console.warn('[crypto] 加密失败，回退到 base64 编码：', err);
-    return bytesToBase64(new TextEncoder().encode(plaintext));
+    console.error('[crypto] 加密失败，拒绝存储未加密的敏感数据：', err);
+    return '';
   }
 };
 
@@ -130,25 +138,21 @@ export const encrypt = async (plaintext: string): Promise<string> => {
  * 解密字符串
  *
  * 输入格式：base64(iv) + ':' + base64(ciphertext)
- * 若输入为 fallback 的 base64 编码（无分隔符），直接 base64 解码。
+ * 若 crypto.subtle 不可用或解密失败，返回空字符串。
  */
 export const decrypt = async (encrypted: string): Promise<string> => {
   if (!encrypted) {
     return '';
   }
 
-  // 兼容 fallback 模式（无分隔符的 base64）
-  if (!encrypted.includes(SEPARATOR)) {
-    try {
-      return new TextDecoder().decode(base64ToBytes(encrypted));
-    } catch (err) {
-      console.warn('[crypto] base64 解码失败：', err);
-      return '';
-    }
+  if (!isSubtleCryptoAvailable()) {
+    console.error('[crypto] crypto.subtle 不可用，无法解密');
+    return '';
   }
 
-  if (!isSubtleCryptoAvailable()) {
-    console.warn('[crypto] crypto.subtle 不可用，无法解密 AES-GCM 密文');
+  if (!encrypted.includes(SEPARATOR)) {
+    // 旧版数据或损坏数据，无法解密
+    console.error('[crypto] 密文格式无效（缺少分隔符）');
     return '';
   }
 
@@ -168,7 +172,7 @@ export const decrypt = async (encrypted: string): Promise<string> => {
 
     return new TextDecoder().decode(plaintextBuffer);
   } catch (err) {
-    console.warn('[crypto] 解密失败：', err);
+    console.error('[crypto] 解密失败：', err);
     return '';
   }
 };

@@ -119,20 +119,24 @@ function App() {
     }
   };
 
+  // AI 生成的代码统一写入 HTML 内容（单文件模式）
+  // 设计意图：AI 助手生成的是完整 HTML 文档，直接覆盖 htmlContent 即可
   const handleCodeGenerated = (code: string) => {
     setHtmlContent(code);
   };
 
   // 自动保存逻辑（不弹 toast，失败只 console.error）—— 返回是否成功，供手动保存判断
+  // 实时从 appStore 读取 currentProject，避免闭包捕获到已删除/已切换的旧项目
   const autoSave = async (): Promise<boolean> => {
-    if (!state.currentProject) return false;
+    const currentProject = appStore.getState().currentProject;
+    if (!currentProject) return false;
     try {
-      if (state.currentProject.type === 'single') {
-        await projectService.writeFile(state.currentProject.id, 'index.html', htmlContent);
+      if (currentProject.type === 'single') {
+        await projectService.writeFile(currentProject.id, 'index.html', htmlContent);
       } else {
-        await projectService.writeFile(state.currentProject.id, 'index.html', htmlContent);
-        await projectService.writeFile(state.currentProject.id, 'style.css', cssContent);
-        await projectService.writeFile(state.currentProject.id, 'script.js', jsContent);
+        await projectService.writeFile(currentProject.id, 'index.html', htmlContent);
+        await projectService.writeFile(currentProject.id, 'style.css', cssContent);
+        await projectService.writeFile(currentProject.id, 'script.js', jsContent);
       }
       setSaveStatus('saved');
       loadProjects(); // 刷新更新时间
@@ -176,6 +180,14 @@ function App() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [htmlContent, cssContent, jsContent]);
+
+  // 组件卸载时清理所有 pending 计时器，避免内存泄漏与卸载后 setState
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+      if (savedResetTimer.current) clearTimeout(savedResetTimer.current);
+    };
+  }, []);
 
   const fileTabs: { key: FileType; label: string; color: string }[] = [
     { key: 'html', label: 'HTML', color: 'text-orange-400' },
